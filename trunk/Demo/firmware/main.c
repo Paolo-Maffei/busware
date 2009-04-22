@@ -11,7 +11,7 @@ int main(void) {
 	for(;;) {
 		char i;
         for(i = 0; i < 10; i++){
-            _delay_ms(30);  /* max is 262.14 ms / F_CPU in MHz */
+            _delay_ms(50);  /* max is 262.14 ms / F_CPU in MHz */
         }
         PORTB ^= _BV( PB1 );    /* toggle the LED */
 
