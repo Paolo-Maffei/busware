@@ -2,7 +2,7 @@
 #include <util/delay.h>
 
 
-void hallo(void) {
+void hallo(uint8_t x) {
 	
 }
 
@@ -14,9 +14,10 @@ int main(void) {
             _delay_ms(55);  /* max is 262.14 ms / F_CPU in MHz */
         }
         PORTB ^= _BV( PB1 );    /* toggle the LED */
-
-		hallo();
-
+		
+		hallo(4);
     }
+	
 	return 0;               /* never reached */
 }
+
