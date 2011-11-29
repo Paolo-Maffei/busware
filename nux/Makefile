@@ -4,7 +4,7 @@
 #*/
 
 RTOS_SOURCE_DIR=FreeRTOS/Source
-LWIP_SOURCE_DIR=lwip-1.3.0
+LWIP_SOURCE_DIR=lwip-1.3.2
 LUMINARY_DRIVER_DIR=FreeRTOS/Common/drivers/LuminaryMicro
 
 CC=arm-none-eabi-gcc
@@ -32,8 +32,8 @@ SOURCE=	main.c \
 		utils/cmdline.c \
 		ETHIsr.c \
 		LWIPStack.c \
-		$(LWIP_SOURCE_DIR)/Apps/telnetd.c \
-		$(LWIP_SOURCE_DIR)/Apps/rawuart.c \
+		telnetd.c \
+		rawuart.c \
 		$(RTOS_SOURCE_DIR)/list.c \
 		$(RTOS_SOURCE_DIR)/queue.c \
 		$(RTOS_SOURCE_DIR)/tasks.c \

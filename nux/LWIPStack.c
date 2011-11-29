@@ -1,12 +1,5 @@
 //*****************************************************************************
 //
-// Include standard library declarations.
-//
-//*****************************************************************************
-#include <string.h>
-
-//*****************************************************************************
-//
 // Include FreeRTOS declarations.
 //
 //*****************************************************************************
@@ -54,8 +47,8 @@
 #include "interrupt.h"
 #include "sysctl.h"
 
-#include "Apps/telnetd.h"
-#include "Apps/rawuart.h"
+#include "telnetd.h"
+#include "rawuart.h"
 
 #include "ETHIsr.h"
 #include "LWIPStack.h"
