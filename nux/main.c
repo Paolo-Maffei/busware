@@ -204,10 +204,6 @@ int main( void ) {
 		xTaskCreate( ethernetThread, ( signed portCHAR * ) "uIP", mainBASIC_TELNET_STACK_SIZE, NULL, CHECK_TASK_PRIORITY , NULL );
 	}
 
-#ifdef UART_SIMULATOR
-	xTaskCreate( vUARTSimTask, ( signed portCHAR * ) "UART_SIM", SIM_TASK_STACK_SIZE, NULL, CHECK_TASK_PRIORITY , NULL );
-#endif
-
 	if (pdPASS != xTaskCreate( console, ( signed portCHAR * ) "CONS", SIM_TASK_STACK_SIZE, NULL, CHECK_TASK_PRIORITY , NULL )) {
 		LWIPDebug("Cant create console!");
 	}
@@ -339,21 +335,6 @@ void prvSetupHardware( void ){
 void vApplicationTickHook( void ) {
 }
 
-#ifdef UART_SIMULATOR
-
-void vUARTSimTask( void *pvParameters ) {
-	unsigned int i;
-	for( ;; )	{
-		for(i = 0; i < 11; ++i) {
-			long num = i + 49;
-			if (xQueueSend( xUART1Queue, &num, portMAX_DELAY) == errQUEUE_FULL ) {
-				vTaskDelay(10 / portTICK_RATE_MS);
-			}
-			vTaskDelay(10 / portTICK_RATE_MS);
-	    }
-	}
-}
-#endif
 
 void vApplicationStackOverflowHook(xTaskHandle *pxTask, signed portCHAR *pcTaskName ) {
 	LWIPDebug("Stackoverflow %s",pcTaskName);

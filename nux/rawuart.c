@@ -12,8 +12,12 @@
 #include "hw_types.h"
 #include "uart.h"
 
+#ifdef LWIP_DEBUG
+#define LWIP_DEBUGAPPS LWIPDebug
+#else
+#define LWIP_DEBUGAPPS while(0)((int (*)(char *, ...))0)
+#endif
 
-extern void LWIPDebug(const char *pcString, ...);
 
 void readuart_thread(void *pvParameters) {
 	struct netconn *conn, *newconn;
@@ -36,10 +40,9 @@ void readuart_thread(void *pvParameters) {
 	while (1) {
 		/* Grab new connection. */
 		newconn = netconn_accept(conn);
-		// there's a bug in version 1.3.0 so we've to upgrade before we can use timeout
-		//newconn->recv_timeout = 100; // wait 100ms for data from ethernet
+		newconn->recv_timeout = 100; // wait 100ms for data from ethernet
 		
-		LWIPDebug("rawuart connection accepted\r\n");
+		LWIP_DEBUGAPPS("rawuart connection accepted\r\n");
 		
 		for(;;) {
 			len = uxQueueMessagesWaiting(xUART1Queue);
@@ -47,17 +50,13 @@ void readuart_thread(void *pvParameters) {
 				if (xQueueReceive( xUART1Queue, &data, portMAX_DELAY) == pdPASS) {
 					err = netconn_write(newconn, &data, sizeof(portCHAR), NETCONN_COPY);
 					if(err != ERR_OK) {
-						LWIPDebug("rawuart netconn_write err: %d\r\n",err);
+						LWIP_DEBUGAPPS("rawuart netconn_write err: %d\r\n",err);
 
 						goto finish;
 					}
 				}
 				len--;
 			}
-/*			
-If timeout = 0 then it blocks until we get data
-If timeout > 0 then the next netconn_write will fail due to a bug in 1.3.0
-http://old.nabble.com/TCP-write-won't-work-after-netconn_recv-timeout-td25802971.html
 
 			buf = netconn_recv(newconn);
 			if (buf != NULL) {
@@ -65,22 +64,21 @@ http://old.nabble.com/TCP-write-won't-work-after-netconn_recv-timeout-td25802971
 				UARTSend(UART1_BASE,indata,len);
 				netbuf_delete(buf);
 			} else if (netconn_err(newconn) != ERR_TIMEOUT) {
-				LWIPDebug("rawuart netconn_recv err: %d\r\n",netconn_err(newconn));
+				LWIP_DEBUGAPPS("rawuart netconn_recv err: %d\r\n",netconn_err(newconn));
 				goto finish;
 			}
-*/
 		};
 		/* Close connection and discard connection identifier. */
 finish:
 		netconn_close(newconn);
 		netconn_delete(newconn);
-		LWIPDebug("rawuart connection closed\r\n");
+		LWIP_DEBUGAPPS("rawuart connection closed\r\n");
 	}
 }
 
 
 void rawuart_init(void) {
-	if (pdPASS != xTaskCreate( readuart_thread, ( signed portCHAR * ) "READUART", configMINIMAL_STACK_SIZE + 100, NULL, tskIDLE_PRIORITY + 3  , NULL )) {
-		LWIPDebug("Cant create readuart!");
+	if (pdPASS != xTaskCreate( readuart_thread, ( signed portCHAR * ) "READUART", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 3  , NULL )) {
+		LWIP_DEBUGAPPS("Cant create readuart!\r\n");
 	}
 }
