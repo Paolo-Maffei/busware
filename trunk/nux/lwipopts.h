@@ -352,8 +352,6 @@
 #define U32_F "u"
 #define S32_F "d"
 #define X32_F "x"
-//extern void LWIPDebug(const char *pcString, ...);
-//#define LWIP_PLATFORM_DIAG(x) {LWIPDebug x;}
 
 
 extern void LWIPDebug(const char *pcString, ...);
@@ -373,7 +371,7 @@ extern void LWIPDebug(const char *pcString, ...);
 //#define LWIP_DBG_TYPES_ON               (LWIP_DBG_ON|LWIP_DBG_TRACE|LWIP_DBG_STATE|LWIP_DBG_FRESH)
 
 #define ETHARP_DEBUG                    LWIP_DBG_OFF     // default is OFF
-#define NETIF_DEBUG                     LWIP_DBG_ON     // default is OFF
+#define NETIF_DEBUG                     LWIP_DBG_OFF     // default is OFF
 #define PBUF_DEBUG                     LWIP_DBG_OFF
 #define API_LIB_DEBUG                  LWIP_DBG_OFF
 #define API_MSG_DEBUG                  LWIP_DBG_OFF
