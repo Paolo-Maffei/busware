@@ -2,8 +2,7 @@
 //
 // uart.h - Defines and Macros for the UART.
 //
-// Copyright (c) 2005-2008 Luminary Micro, Inc.  All rights reserved.
-// 
+// Copyright (c) 2005-2009 Luminary Micro, Inc.  All rights reserved.
 // Software License Agreement
 // 
 // Luminary Micro, Inc. (LMI) is supplying this software for use solely and
@@ -22,7 +21,7 @@
 // LMI SHALL NOT, IN ANY CIRCUMSTANCES, BE LIABLE FOR SPECIAL, INCIDENTAL, OR
 // CONSEQUENTIAL DAMAGES, FOR ANY REASON WHATSOEVER.
 // 
-// This is part of revision 2523 of the Stellaris Peripheral Driver Library.
+// This is part of revision 4781 of the Stellaris Peripheral Driver Library.
 //
 //*****************************************************************************
 
@@ -53,6 +52,10 @@ extern "C"
 #define UART_INT_RT             0x040       // Receive Timeout Interrupt Mask
 #define UART_INT_TX             0x020       // Transmit Interrupt Mask
 #define UART_INT_RX             0x010       // Receive Interrupt Mask
+#define UART_INT_DSR            0x008       // DSR Modem Interrupt Mask
+#define UART_INT_DCD            0x004       // DCD Modem Interrupt Mask
+#define UART_INT_CTS            0x002       // CTS Modem Interrupt Mask
+#define UART_INT_RI             0x001       // RI Modem Interrupt Mask
 
 //*****************************************************************************
 //
@@ -75,8 +78,8 @@ extern "C"
 #define UART_CONFIG_PAR_NONE    0x00000000  // No parity
 #define UART_CONFIG_PAR_EVEN    0x00000006  // Even parity
 #define UART_CONFIG_PAR_ODD     0x00000002  // Odd parity
-#define UART_CONFIG_PAR_ONE     0x00000086  // Parity bit is one
-#define UART_CONFIG_PAR_ZERO    0x00000082  // Parity bit is zero
+#define UART_CONFIG_PAR_ONE     0x00000082  // Parity bit is one
+#define UART_CONFIG_PAR_ZERO    0x00000086  // Parity bit is zero
 
 //*****************************************************************************
 //
@@ -113,6 +116,54 @@ extern "C"
 
 //*****************************************************************************
 //
+// Values returned from UARTRxErrorGet().
+//
+//*****************************************************************************
+#define UART_RXERROR_OVERRUN    0x00000008
+#define UART_RXERROR_BREAK      0x00000004
+#define UART_RXERROR_PARITY     0x00000002
+#define UART_RXERROR_FRAMING    0x00000001
+
+//*****************************************************************************
+//
+// Values that can be passed to UARTHandshakeOutputsSet() or returned from
+// UARTHandshakeOutputGet().
+//
+//*****************************************************************************
+#define UART_OUTPUT_RTS         0x00000800
+#define UART_OUTPUT_DTR         0x00000400
+
+//*****************************************************************************
+//
+// Values that can be returned from UARTHandshakeInputsGet().
+//
+//*****************************************************************************
+#define UART_INPUT_RI           0x00000100
+#define UART_INPUT_DCD          0x00000004
+#define UART_INPUT_DSR          0x00000002
+#define UART_INPUT_CTS          0x00000001
+
+//*****************************************************************************
+//
+// Values that can be passed to UARTFlowControl() or returned from
+// UARTFlowControlGet().
+//
+//*****************************************************************************
+#define UART_FLOWCONTROL_TX     0x00008000
+#define UART_FLOWCONTROL_RX     0x00004000
+#define UART_FLOWCONTROL_NONE   0x00000000
+
+//*****************************************************************************
+//
+// Values that can be passed to UARTTxIntModeSet() or returned from
+// UARTTxIntModeGet().
+//
+//*****************************************************************************
+#define UART_TXINT_MODE_FIFO    0x00000000
+#define UART_TXINT_MODE_EOT     0x00000010
+
+//*****************************************************************************
+//
 // API Function prototypes
 //
 //*****************************************************************************
@@ -129,6 +180,8 @@ extern void UARTConfigGetExpClk(unsigned long ulBase, unsigned long ulUARTClk,
                                 unsigned long *pulConfig);
 extern void UARTEnable(unsigned long ulBase);
 extern void UARTDisable(unsigned long ulBase);
+extern void UARTFIFOEnable(unsigned long ulBase);
+extern void UARTFIFODisable(unsigned long ulBase);
 extern void UARTEnableSIR(unsigned long ulBase, tBoolean bLowPower);
 extern void UARTDisableSIR(unsigned long ulBase);
 extern tBoolean UARTCharsAvail(unsigned long ulBase);
@@ -139,6 +192,7 @@ extern tBoolean UARTCharPutNonBlocking(unsigned long ulBase,
                                        unsigned char ucData);
 extern void UARTCharPut(unsigned long ulBase, unsigned char ucData);
 extern void UARTBreakCtl(unsigned long ulBase, tBoolean bBreakState);
+extern tBoolean UARTBusy(unsigned long ulBase);
 extern void UARTIntRegister(unsigned long ulBase, void(*pfnHandler)(void));
 extern void UARTIntUnregister(unsigned long ulBase);
 extern void UARTIntEnable(unsigned long ulBase, unsigned long ulIntFlags);
@@ -147,6 +201,20 @@ extern unsigned long UARTIntStatus(unsigned long ulBase, tBoolean bMasked);
 extern void UARTIntClear(unsigned long ulBase, unsigned long ulIntFlags);
 extern void UARTDMAEnable(unsigned long ulBase, unsigned long ulDMAFlags);
 extern void UARTDMADisable(unsigned long ulBase, unsigned long ulDMAFlags);
+extern unsigned long UARTRxErrorGet(unsigned long ulBase);
+extern void UARTRxErrorClear(unsigned long ulBase);
+extern void UARTSmartCardEnable(unsigned long ulBase);
+extern void UARTSmartCardDisable(unsigned long ulBase);
+extern void UARTModemControlSet(unsigned long ulBase,
+                                unsigned long ulControl);
+extern void UARTModemControlClear(unsigned long ulBase,
+                                  unsigned long ulControl);
+extern unsigned long UARTModemControlGet(unsigned long ulBase);
+extern unsigned long UARTModemStatusGet(unsigned long ulBase);
+extern void UARTFlowControlSet(unsigned long ulBase, unsigned long ulMode);
+extern unsigned long UARTFlowControlGet(unsigned long ulBase);
+extern void UARTTxIntModeSet(unsigned long ulBase, unsigned long ulMode);
+extern unsigned long UARTTxIntModeGet(unsigned long ulBase);
 
 //*****************************************************************************
 //

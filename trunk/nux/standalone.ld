@@ -1,7 +1,7 @@
 /******************************************************************************
 standalone.ld - Linker script for applications using startup.c and  DriverLib.
 
-Copyright (C) 2011  name of busware
+Copyright (C) 2011  busware
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License

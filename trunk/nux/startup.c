@@ -1,7 +1,5 @@
 /*****************************************************************************
-startup.c - Boot code for Stellaris.
-
-Copyright (C) 2011  name of busware
+Copyright (C) 2011  busware
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -39,9 +37,9 @@ extern void xPortSysTickHandler(void);
 extern void vPortSVCHandler( void );
 
 extern void UART1IntHandler(void);
-extern void UART0IntHandler(void);
+extern void WatchdogIntHandler(void);
 
-void ETH0IntHandler(void);
+extern void ETH0IntHandler(void);
 
 //*****************************************************************************
 //
@@ -85,7 +83,7 @@ void (* const g_pfnVectors[])(void) =
     IntDefaultHandler,                      // GPIO Port C
     IntDefaultHandler,                      // GPIO Port D
     IntDefaultHandler,                      // GPIO Port E
-    UART0IntHandler,                        // UART0 Rx and Tx
+    IntDefaultHandler,                      // UART0 Rx and Tx
     UART1IntHandler,                        // UART1 Rx and Tx
     IntDefaultHandler,                      // SSI Rx and Tx
     IntDefaultHandler,                      // I2C Master and Slave
@@ -98,7 +96,7 @@ void (* const g_pfnVectors[])(void) =
     IntDefaultHandler,                      // ADC Sequence 1
     IntDefaultHandler,                      // ADC Sequence 2
     IntDefaultHandler,                      // ADC Sequence 3
-    IntDefaultHandler,                      // Watchdog timer
+    WatchdogIntHandler,                     // Watchdog timer
     IntDefaultHandler,                      // Timer 0 subtimer A
     IntDefaultHandler,                      // Timer 0 subtimer B
     IntDefaultHandler,                      // Timer 1 subtimer A
@@ -115,7 +113,7 @@ void (* const g_pfnVectors[])(void) =
     IntDefaultHandler,                      // GPIO Port H
     IntDefaultHandler,                      // UART2 Rx and Tx
     IntDefaultHandler,                      // SSI1 Rx and Tx
-    IntDefaultHandler,                    // Timer 3 subtimer A
+    IntDefaultHandler,                      // Timer 3 subtimer A
     IntDefaultHandler,                      // Timer 3 subtimer B
     IntDefaultHandler,                      // I2C1 Master and Slave
     IntDefaultHandler,                      // Quadrature Encoder 1

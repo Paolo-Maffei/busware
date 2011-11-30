@@ -2,8 +2,7 @@
 //
 // i2c.h - Prototypes for the I2C Driver.
 //
-// Copyright (c) 2005-2008 Luminary Micro, Inc.  All rights reserved.
-// 
+// Copyright (c) 2005-2009 Luminary Micro, Inc.  All rights reserved.
 // Software License Agreement
 // 
 // Luminary Micro, Inc. (LMI) is supplying this software for use solely and
@@ -22,7 +21,7 @@
 // LMI SHALL NOT, IN ANY CIRCUMSTANCES, BE LIABLE FOR SPECIAL, INCIDENTAL, OR
 // CONSEQUENTIAL DAMAGES, FOR ANY REASON WHATSOEVER.
 // 
-// This is part of revision 2523 of the Stellaris Peripheral Driver Library.
+// This is part of revision 4781 of the Stellaris Peripheral Driver Library.
 //
 //*****************************************************************************
 
@@ -99,6 +98,15 @@ extern "C"
 
 //*****************************************************************************
 //
+// I2C Slave interrupts.
+//
+//*****************************************************************************
+#define I2C_SLAVE_INT_STOP      0x00000004  // Stop Condition Interrupt.
+#define I2C_SLAVE_INT_START     0x00000002  // Start Condition Interrupt.
+#define I2C_SLAVE_INT_DATA      0x00000001  // Data Interrupt.
+
+//*****************************************************************************
+//
 // Prototypes for the APIs.
 //
 //*****************************************************************************
@@ -129,7 +137,13 @@ extern void I2CSlaveInit(unsigned long ulBase, unsigned char ucSlaveAddr);
 extern void I2CSlaveIntClear(unsigned long ulBase);
 extern void I2CSlaveIntDisable(unsigned long ulBase);
 extern void I2CSlaveIntEnable(unsigned long ulBase);
+extern void I2CSlaveIntClearEx(unsigned long ulBase, unsigned long ulIntFlags);
+extern void I2CSlaveIntDisableEx(unsigned long ulBase,
+                                 unsigned long ulIntFlags);
+extern void I2CSlaveIntEnableEx(unsigned long ulBase, unsigned long ulIntFlags);
 extern tBoolean I2CSlaveIntStatus(unsigned long ulBase, tBoolean bMasked);
+extern unsigned long I2CSlaveIntStatusEx(unsigned long ulBase,
+                                         tBoolean bMasked);
 extern unsigned long I2CSlaveStatus(unsigned long ulBase);
 
 //*****************************************************************************
@@ -139,7 +153,7 @@ extern unsigned long I2CSlaveStatus(unsigned long ulBase);
 //
 //*****************************************************************************
 #ifndef DEPRECATED
-#include "sysctl.h"
+#include "driverlib/sysctl.h"
 #define I2CMasterInit(a, b)                         \
         I2CMasterInitExpClk(a, SysCtlClockGet(), b)
 #endif

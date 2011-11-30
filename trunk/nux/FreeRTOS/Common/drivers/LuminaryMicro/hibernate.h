@@ -2,8 +2,7 @@
 //
 // hibernate.h - API definition for the Hibernation module.
 //
-// Copyright (c) 2007-2008 Luminary Micro, Inc.  All rights reserved.
-// 
+// Copyright (c) 2007-2009 Luminary Micro, Inc.  All rights reserved.
 // Software License Agreement
 // 
 // Luminary Micro, Inc. (LMI) is supplying this software for use solely and
@@ -22,7 +21,7 @@
 // LMI SHALL NOT, IN ANY CIRCUMSTANCES, BE LIABLE FOR SPECIAL, INCIDENTAL, OR
 // CONSEQUENTIAL DAMAGES, FOR ANY REASON WHATSOEVER.
 // 
-// This is part of revision 2523 of the Stellaris Peripheral Driver Library.
+// This is part of revision 4781 of the Stellaris Peripheral Driver Library.
 //
 //*****************************************************************************
 
@@ -114,7 +113,7 @@ extern unsigned int HibernateIsActive(void);
 //
 //*****************************************************************************
 #ifndef DEPRECATED
-#include "sysctl.h"
+#include "driverlib/sysctl.h"
 #define HibernateEnable(a)                         \
         HibernateEnableExpClk(a, SysCtlClockGet())
 #endif

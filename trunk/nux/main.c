@@ -1,5 +1,5 @@
 /*************************************************************************
-Copyright (C) 2011  name of busware
+Copyright (C) 2011  busware
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -28,10 +28,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "hw_types.h"
 #include "hw_sysctl.h"
 #include "hw_ints.h"
+#include "hw_watchdog.h"
+
+/* driverlib library includes */
 #include "sysctl.h"
 #include "gpio.h"
 #include "grlib.h"
 #include "uart.h"
+#include "watchdog.h"
 
 #include "lwip/tcpip.h"
 #include "lwiplib.h"
@@ -46,11 +50,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 /*-----------------------------------------------------------*/
 
-/* The time between cycles of the 'check' functionality (defined within the
-tick hook. */
-#define mainCHECK_DELAY						( ( portTickType ) 5000 / portTICK_RATE_MS )
 
-/* Size of the stack allocated to the uIP task. */
 #define mainBASIC_TELNET_STACK_SIZE            ( configMINIMAL_STACK_SIZE * 2 )
 
 
@@ -59,17 +59,10 @@ tick hook. */
 /* Task priorities. */
 #define CHECK_TASK_PRIORITY				( tskIDLE_PRIORITY + 3 )
 
-/* The maximum number of message that can be waiting for display at any one
+/* The maximum number of messages that can be waiting for process at any one
 time. */
-#define mainOLED_QUEUE_SIZE					( 3 )
 #define UART_QUEUE_SIZE						( 512 )
 
-
-/* Constants used when writing strings to the display. */
-#define CHARACTER_HEIGHT				( 9 )
-#define MAX_ROWS_128					( CHARACTER_HEIGHT * 14 )
-#define FULL_SCALE						( 15 )
-#define SSI_FREQUENCY						( 1000000 )
 
 #define SYSCTL_RCGC2_R          (*((volatile unsigned long *)0x400FE108))
 #define GPIO_PORTF_DIR_R        (*((volatile unsigned long *)0x40025400))
@@ -78,20 +71,14 @@ time. */
 
 /*-----------------------------------------------------------*/
 
+
 int ETHServiceTaskInit(const unsigned long ulPort);
 int ETHServiceTaskFlush(const unsigned long ulPort, const unsigned long flCmd);
 void LWIPServiceTaskInit(void *pvParameters);
 
-#ifdef UART_SIMULATOR
-static void vUARTSimTask( void *pvParameters );
-#endif
 
 void console( void *pvParameters );
-
-/*
- * Configure the hardware for the demo.
- */
-static void prvSetupHardware( void );
+static void prvSetupHardware( void ); // configure the hardware
 
 /*
  * The idle hook is used to run a test of the scheduler context switch
@@ -111,6 +98,8 @@ const portCHAR * const pcWelcomeMessage = "   nux 1.0";
 unsigned portLONG ulIdleError = pdFALSE;
 
 unsigned int inthandler = 1;
+volatile unsigned short should_reset; // watchdog variable to perform a reboot
+
 /*-----------------------------------------------------------*/
 
 /*
@@ -221,7 +210,7 @@ void prvSetupHardware( void ){
     volatile unsigned long ulLoop;
 	tBoolean found;
     long lEEPROMRetStatus;
-    unsigned short data;
+    unsigned short data,data2;
 	unsigned long uart_speed;
 	
     /* If running on Rev A2 silicon, turn the LDO voltage up to 2.75V.  This is
@@ -287,9 +276,8 @@ void prvSetupHardware( void ){
 
     lEEPROMRetStatus = SoftEEPROMRead(UART0_SPEED_HIGH_ID, &data, &found);
 	if(lEEPROMRetStatus == 0 && found) {
-		uart_speed = data << 8;
-	    SoftEEPROMRead(UART0_SPEED_LOW_ID, &data, &found);
-		uart_speed |= data;
+	    SoftEEPROMRead(UART0_SPEED_LOW_ID, &data2, &found);
+		uart_speed = (data << 16 & 0xFFFF0000) | (data2 & 0x0000FFFF);
 	    SoftEEPROMRead(UART0_CONFIG_ID, &data, &found);
 	} else {
 		uart_speed=115200;
@@ -301,8 +289,8 @@ void prvSetupHardware( void ){
     lEEPROMRetStatus = SoftEEPROMRead(UART1_SPEED_HIGH_ID, &data, &found);
 	if(lEEPROMRetStatus == 0 && found) {
 		uart_speed = data << 8;
-	    SoftEEPROMRead(UART1_SPEED_LOW_ID, &data, &found);
-		uart_speed |= data;
+	    SoftEEPROMRead(UART1_SPEED_LOW_ID, &data2, &found);
+		uart_speed = (data << 16 & 0xFFFF0000) | (data2 & 0x0000FFFF);
 	    SoftEEPROMRead(UART1_CONFIG_ID, &data, &found);
 	} else {
 		uart_speed=38400;
@@ -311,10 +299,6 @@ void prvSetupHardware( void ){
 
     UARTConfigSetExpClk(UART1_BASE, SysCtlClockGet(), uart_speed, data);
 
-    //
-    // Enable the UART interrupt.
-    //
-    //IntEnable(INT_UART0);
     IntEnable(INT_UART1);
 
     //UARTIntEnable(UART0_BASE, UART_INT_RX | UART_INT_RT);
@@ -329,6 +313,13 @@ void prvSetupHardware( void ){
 		inthandler=77;
     }
 
+
+	SysCtlPeripheralEnable(SYSCTL_PERIPH_WDOG0);
+
+    IntEnable(INT_WATCHDOG); // Enable the watchdog interrupt.
+    WatchdogReloadSet(WATCHDOG0_BASE, SysCtlClockGet());
+    WatchdogResetEnable(WATCHDOG0_BASE);
+    WatchdogEnable(WATCHDOG0_BASE);
 }
 /*-----------------------------------------------------------*/
 
@@ -352,4 +343,14 @@ void LWIPDebug(const char *pcString, ...) {
 	UARTSend(UART0_BASE,buf,len);
     va_end(vaArgP);
 	vPortFree(buf);
+}
+
+/*
+	Watchdog handler. 
+*/
+void WatchdogIntHandler(void) {
+    if (! should_reset) {
+	    WatchdogIntClear(WATCHDOG0_BASE);
+	}
+
 }
