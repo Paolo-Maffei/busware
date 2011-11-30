@@ -62,7 +62,7 @@ tick hook. */
 /* The maximum number of message that can be waiting for display at any one
 time. */
 #define mainOLED_QUEUE_SIZE					( 3 )
-#define UART_QUEUE_SIZE						( 20 )
+#define UART_QUEUE_SIZE						( 512 )
 
 
 /* Constants used when writing strings to the display. */
@@ -305,7 +305,7 @@ void prvSetupHardware( void ){
 		uart_speed |= data;
 	    SoftEEPROMRead(UART1_CONFIG_ID, &data, &found);
 	} else {
-		uart_speed=115200;
+		uart_speed=38400;
 		data = (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE | UART_CONFIG_PAR_NONE);
 	}
 
