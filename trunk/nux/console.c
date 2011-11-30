@@ -523,7 +523,7 @@ tCmdLineEntry g_sCmdTable[] = {
     { "h",      cmd_help,   "    : alias for help" },
     { "?",      cmd_help,   "    : alias for help" },
     { "reset",      cmd_clear,  "    : Reset soft EEPROM - Usage: reset" },
-    { "ipaddr", cmd_static_ipaddr,  ": set/display static ipaddr address - Usage: ip [addr mask gateway]" },
+    { "ipaddr", cmd_static_ipaddr,  ": set/display static ipaddr address - Usage: ipaddr [addr mask gateway]" },
     { "ipmode", cmd_ipmode, ": set/display ip acquisition mode - Usage: ipmode [dhcp|static]" },
     { "uart",   cmd_uartmode, ": set/display uart - Usage: uart <id> <speed> <len> <stop> <parity>" },
 
