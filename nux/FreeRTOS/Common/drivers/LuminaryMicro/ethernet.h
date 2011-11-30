@@ -2,8 +2,7 @@
 //
 // ethernet.h - Defines and Macros for the ethernet module.
 //
-// Copyright (c) 2006-2008 Luminary Micro, Inc.  All rights reserved.
-// 
+// Copyright (c) 2006-2009 Luminary Micro, Inc.  All rights reserved.
 // Software License Agreement
 // 
 // Luminary Micro, Inc. (LMI) is supplying this software for use solely and
@@ -22,7 +21,7 @@
 // LMI SHALL NOT, IN ANY CIRCUMSTANCES, BE LIABLE FOR SPECIAL, INCIDENTAL, OR
 // CONSEQUENTIAL DAMAGES, FOR ANY REASON WHATSOEVER.
 // 
-// This is part of revision 2523 of the Stellaris Peripheral Driver Library.
+// This is part of revision 4781 of the Stellaris Peripheral Driver Library.
 //
 //*****************************************************************************
 
@@ -152,7 +151,7 @@ extern unsigned long EthernetPHYRead(unsigned long ulBase,
 //
 //*****************************************************************************
 #ifndef DEPRECATED
-#include "sysctl.h"
+#include "driverlib/sysctl.h"
 #define EthernetInit(a)                         \
         EthernetInitExpClk(a, SysCtlClockGet())
 #define EthernetPacketNonBlockingGet(a, b, c) \

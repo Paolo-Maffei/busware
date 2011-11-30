@@ -1,5 +1,5 @@
 /*************************************************************************
-Copyright (C) 2011  name of busware
+Copyright (C) 2011  busware
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -33,11 +33,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 
 
-//*****************************************************************************
-//
-//! The buffer that holds the command line entry.
-//
-//*****************************************************************************
+/*****************************************************************************
+! The buffer that holds the command line entry.
+*****************************************************************************/
 
 struct console_state *cmd_out;
 
@@ -66,75 +64,58 @@ int cmd_print(const char *pcString, ...) {
 	return len;
 }
 
-//*****************************************************************************
-//
-//! Outputs the error and quits.
-//!
-//! This function will output an error message for the given error code and
-//! enter an infinite loop.  The message is sent out via UART0.
-//!
-//! \param ulError is the error code returned by the soft EEPROM drivers.
-//!
-//! \return None.
-//
-//*****************************************************************************
+/*****************************************************************************
+! Outputs the error.
+!
+! This function will output an error message for the given error code and
+! enter an infinite loop.  The message is sent out via UART0.
+!
+! \param ulError is the error code returned by the soft EEPROM drivers.
+!
+! \return ERROR_MEM.
+*****************************************************************************/
 int output_error(unsigned long ulError) {
-	char *str;
-	
-	str= (char *)pvPortMalloc(TELNETD_CONF_LINELEN);
-	if(str == NULL) {
-		return ERROR_MEM;
-	}
     //
     // Switch and output based on the error code.
     //
     switch(ulError & 0x7FFF) {
         case ERR_NOT_INIT:
-            usnprintf(str,TELNETD_CONF_LINELEN,"\r\nERROR: Soft EEPROM not initialized!");
+            cmd_print("\r\nERROR: Soft EEPROM not initialized!");
             break;
         case ERR_ILLEGAL_ID:
-            usnprintf(str,TELNETD_CONF_LINELEN,"\r\nERROR: Illegal ID used!");
+            cmd_print("\r\nERROR: Illegal ID used!");
             break;
         case ERR_PG_ERASE:
-            usnprintf(str,TELNETD_CONF_LINELEN,"\r\nERROR: Soft EEPROM page erase error!");
+            cmd_print("\r\nERROR: Soft EEPROM page erase error!");
             break;
         case ERR_PG_WRITE:
-            usnprintf(str,TELNETD_CONF_LINELEN,"\r\nERROR: Soft EEPROM page write error!");
+            cmd_print("\r\nERROR: Soft EEPROM page write error!");
             break;
         case ERR_ACTIVE_PG_CNT:
-            usnprintf(str,TELNETD_CONF_LINELEN,"\r\nERROR: Active soft EEPROM page count error!");
+            cmd_print("\r\nERROR: Active soft EEPROM page count error!");
             break;
         case ERR_RANGE:
-            usnprintf(str,TELNETD_CONF_LINELEN,"\r\nERROR: Soft EEPROM specified out of range!");
+            cmd_print("\r\nERROR: Soft EEPROM specified out of range!");
             break;
         case ERR_AVAIL_ENTRY:
-            usnprintf(str,TELNETD_CONF_LINELEN,"\r\nERROR: Next available entry error!");
+            cmd_print("\r\nERROR: Next available entry error!");
             break;
         case ERR_TWO_ACTIVE_NO_FULL:
-            usnprintf(str,TELNETD_CONF_LINELEN,"\r\nERROR: Two active pages found but not full!");
+            cmd_print("\r\nERROR: Two active pages found but not full!");
             break;
         default:
-            usnprintf(str,TELNETD_CONF_LINELEN,"\r\nERROR: Unidentified Error");
+            cmd_print("\r\nERROR: Unidentified Error");
             break;
     }
-	cmd_out->line++;
-	cmd_out->lines[cmd_out->line] = str;
 	                       
     //
     // Did the error occur during the swap operation?
     //
     if(ulError & ERR_SWAP) {
-		str= (char *)pvPortMalloc(TELNETD_CONF_LINELEN);
-		if(str == NULL) {
-			return ERROR_MEM;
-		}
-
         //
         // Indicate that the error occurred during the swap operation.
         //
-        usnprintf(str,TELNETD_CONF_LINELEN,"\r\nOccurred during the swap operation.");
-		cmd_out->line++;
-		cmd_out->lines[cmd_out->line] = str;
+        cmd_print("\r\nOccurred during the swap operation.");
     }
     
 	return ERROR_MEM;
@@ -142,54 +123,31 @@ int output_error(unsigned long ulError) {
 
 
 int cmd_quit(int argc, char *argv[]) {
-	char *str;
-	str= (char *)pvPortMalloc(TELNETD_CONF_LINELEN);
-	if(str == NULL) {
-		return ERROR_MEM;
-	}
-
-    //
-    // Indicate that the error occurred during the swap operation.
-    //
-    usnprintf(str,TELNETD_CONF_LINELEN,"\r\nBye.");
-	cmd_out->line++;
-	cmd_out->lines[cmd_out->line] = str;
+    cmd_print("\r\nBye.");
 	
 	return CMDLINE_QUIT;
 }
-//*****************************************************************************
-//
-//! Implements the clear command.
-//!
-//! This function implements the "c" (clear) command.  It clears the contents
-//! of the soft EEPROM. An argument count (argc) of zero is expected.
-//!
-//! \param argc is the argument count from the command line.
-//!
-//! \param argv is a pointer to the argument buffer from the command line.
-//!
-//! \return A value of 0 indicates that the command was successful.  A non-zero
-//! value indicates a failure.
-//
-//*****************************************************************************
+/*****************************************************************************
+
+! Implements the clear command.
+!
+! This function implements the "c" (clear) command.  It clears the contents
+! of the soft EEPROM. An argument count (argc) of zero is expected.
+!
+! \param argc is the argument count from the command line.
+!
+! \param argv is a pointer to the argument buffer from the command line.
+!
+! \return A value of 0 indicates that the command was successful.  A non-zero
+! value indicates a failure.
+
+*****************************************************************************/
 int cmd_clear(int argc, char *argv[]) {
     long lEEPROMRetStatus;
-	char *str;
-    //
-    // Clear the EEPROM.
-    //
     lEEPROMRetStatus = SoftEEPROMClear();
     
     if(lEEPROMRetStatus != 0) {
-		str= (char *)pvPortMalloc(TELNETD_CONF_LINELEN);
-		if(str == NULL) {
-			return ERROR_MEM;
-		}
-	
-        usnprintf(str,TELNETD_CONF_LINELEN,"\rAn error occurred during a soft EEPROM clear operation");
-		cmd_out->line++;
-		cmd_out->lines[cmd_out->line] = str;
-
+        cmd_print("\rAn error occurred during a soft EEPROM clear operation");
         return output_error(lEEPROMRetStatus);
     }
     return(0);
@@ -200,31 +158,16 @@ int cmd_ipmode(int argc, char *argv[]) {
 	tBoolean found;
     long lEEPROMRetStatus;
     unsigned short usdata;
-	unsigned char *str;
 
 	if (argc < 2) {
 	    lEEPROMRetStatus = SoftEEPROMRead(IPMODE_ID, &usdata, &found);
 		
 	    if(lEEPROMRetStatus != 0) {
-			str= (char *)pvPortMalloc(TELNETD_CONF_LINELEN);
-			if(str == NULL) {
-				return ERROR_MEM;
-			}
-
-	        usnprintf(str,TELNETD_CONF_LINELEN,"\rAn error occurred during a soft EEPROM read operation");
-			cmd_out->line++;
-			cmd_out->lines[cmd_out->line] = str;
-
+	        cmd_print("\rAn error occurred during a soft EEPROM read operation");
 	        return output_error(lEEPROMRetStatus);
 	    }
-		str= (char *)pvPortMalloc(TELNETD_CONF_LINELEN);
-		if(str == NULL) {
-			return ERROR_MEM;
-		}
 		usdata = found ? usdata : 1;
-		usnprintf(str,TELNETD_CONF_LINELEN,"ip mode : %s", usdata == 1 ? "dhcp" : "static");
-		cmd_out->line++;
-		cmd_out->lines[cmd_out->line] = str;
+		cmd_print("ip mode : %s", usdata == 1 ? "dhcp" : "static");
 		
 		return(0);
 		
@@ -237,15 +180,7 @@ int cmd_ipmode(int argc, char *argv[]) {
 	    lEEPROMRetStatus = SoftEEPROMWrite(IPMODE_ID, usdata);
 
 	    if(lEEPROMRetStatus != 0) {
-			str= (char *)pvPortMalloc(TELNETD_CONF_LINELEN);
-			if(str == NULL) {
-				return ERROR_MEM;
-			}
-
-	        usnprintf(str,TELNETD_CONF_LINELEN,"\rAn error occurred during a soft EEPROM write operation");
-			cmd_out->line++;
-			cmd_out->lines[cmd_out->line] = str;
-
+	        cmd_print("\r\nAn error occurred during a soft EEPROM write operation");
 	        return output_error(lEEPROMRetStatus);
 	    }
 	}
@@ -262,76 +197,35 @@ int cmd_static_ipaddr(int argc, char *argv[]) {
 	tBoolean found;
     long lEEPROMRetStatus;
     unsigned short usdata,usdata2;
-	unsigned char *str;
 
 	if (argc < 2) {
 	    lEEPROMRetStatus = SoftEEPROMRead(STATIC_IPADDR_LOW_ID, &usdata, &found);
 		
 	    if(lEEPROMRetStatus != 0) {
-			str= (char *)pvPortMalloc(TELNETD_CONF_LINELEN);
-			if(str == NULL) {
-				return ERROR_MEM;
-			}
-
-	        usnprintf(str,TELNETD_CONF_LINELEN,"\rAn error occurred during a soft EEPROM read operation");
-			cmd_out->line++;
-			cmd_out->lines[cmd_out->line] = str;
-
+	        cmd_print("\r\nAn error occurred during a soft EEPROM read operation");
 	        return output_error(lEEPROMRetStatus);
 	    }
 		if(found) {
 		    lEEPROMRetStatus = SoftEEPROMRead(STATIC_IPADDR_HIGH_ID, &usdata2, &found);
-			str= (char *)pvPortMalloc(TELNETD_CONF_LINELEN);
-			if(str == NULL) {
-				return ERROR_MEM;
-			}
-
-	        usnprintf(str,TELNETD_CONF_LINELEN,"ip addr: %d.%d.%d.%d", ((usdata2 >> 8) & 0xff),((usdata2 >> 0) & 0xff),((usdata >> 8) & 0xff),((usdata >> 0) & 0xff));
-			cmd_out->line++;
-			cmd_out->lines[cmd_out->line] = str;
-
+	        cmd_print("ip addr: %d.%d.%d.%d", ((usdata2 >> 8) & 0xff),((usdata2 >> 0) & 0xff),((usdata >> 8) & 0xff),((usdata >> 0) & 0xff));
 
 		    lEEPROMRetStatus = SoftEEPROMRead(STATIC_IPMASK_LOW_ID, &usdata, &found);
 		    lEEPROMRetStatus = SoftEEPROMRead(STATIC_IPMASK_HIGH_ID, &usdata2, &found);
-
-			str= (char *)pvPortMalloc(TELNETD_CONF_LINELEN);
-			if(str == NULL) {
-				return ERROR_MEM;
-			}
-
-	        usnprintf(str,TELNETD_CONF_LINELEN,"\r\nmask   : %d.%d.%d.%d", ((usdata2 >> 8) & 0xff),((usdata2 >> 0) & 0xff),((usdata >> 8) & 0xff),((usdata >> 0) & 0xff));
-			cmd_out->line++;
-			cmd_out->lines[cmd_out->line] = str;
+	        cmd_print("\r\nmask   : %d.%d.%d.%d", ((usdata2 >> 8) & 0xff),((usdata2 >> 0) & 0xff),((usdata >> 8) & 0xff),((usdata >> 0) & 0xff));
 
 		    lEEPROMRetStatus = SoftEEPROMRead(STATIC_IPGW_LOW_ID, &usdata, &found);
 		    lEEPROMRetStatus = SoftEEPROMRead(STATIC_IPGW_HIGH_ID, &usdata2, &found);
-			str= (char *)pvPortMalloc(TELNETD_CONF_LINELEN);
-			if(str == NULL) {
-				return ERROR_MEM;
-			}
-
-	        usnprintf(str,TELNETD_CONF_LINELEN,"\r\ngateway: %d.%d.%d.%d", ((usdata2 >> 8) & 0xff),((usdata2 >> 0) & 0xff),((usdata >> 8) & 0xff),((usdata >> 0) & 0xff));
-			cmd_out->line++;
-			cmd_out->lines[cmd_out->line] = str;
-
+	        cmd_print("\r\ngateway: %d.%d.%d.%d", ((usdata2 >> 8) & 0xff),((usdata2 >> 0) & 0xff),((usdata >> 8) & 0xff),((usdata >> 0) & 0xff));
 			return(0);
 		}
-		cmd_print("No static ip address stored.");
+		cmd_print("\r\nNo static ip address stored.");
 	} else if (argc == 4){
 	    usdata2 = atoi(strtok(argv[1],".")) << 8;
 	    usdata2 |= atoi(strtok(NULL,"."));
 	    lEEPROMRetStatus = SoftEEPROMWrite(STATIC_IPADDR_HIGH_ID, usdata2);
 
 	    if(lEEPROMRetStatus != 0) {
-			str= (char *)pvPortMalloc(TELNETD_CONF_LINELEN);
-			if(str == NULL) {
-				return ERROR_MEM;
-			}
-
-	        usnprintf(str,TELNETD_CONF_LINELEN,"\rAn error occurred during a soft EEPROM write operation");
-			cmd_out->line++;
-			cmd_out->lines[cmd_out->line] = str;
-
+	        cmd_print("\rAn error occurred during a soft EEPROM write operation");
 	        return output_error(lEEPROMRetStatus);
 	    }
 	    usdata2 = atoi(strtok(NULL,".")) << 8;
@@ -355,15 +249,7 @@ int cmd_static_ipaddr(int argc, char *argv[]) {
 	    SoftEEPROMWrite(STATIC_IPGW_LOW_ID, usdata2);
 
 	} else {
-		str= (char *)pvPortMalloc(TELNETD_CONF_LINELEN);
-		if(str == NULL) {
-			return ERROR_MEM;
-		}
-
-        usnprintf(str,TELNETD_CONF_LINELEN,"Wrong number of arguments\r\n");
-		cmd_out->line++;
-		cmd_out->lines[cmd_out->line] = str;
-
+        cmd_print("Wrong number of arguments\r\n");
         return(ERROR_UNHANDLED);
 	}
 	return(0);
@@ -379,7 +265,7 @@ int cmd_static_ipaddr(int argc, char *argv[]) {
 int cmd_uartmode(int argc, char *argv[]) {
 	tBoolean found;
     long lEEPROMRetStatus;
-    unsigned short uart_base,data,uart_len,uart_stop;
+    unsigned short uart_base,data,data2,uart_len,uart_stop;
 	unsigned long uart_speed;
 	char uart_parity;
 	
@@ -396,9 +282,8 @@ int cmd_uartmode(int argc, char *argv[]) {
 		}
 		SoftEEPROMRead(UART0_SPEED_HIGH_ID + uart_base, &data, &found);
 	    if (found) {
-			uart_speed = data << 8;
-			SoftEEPROMRead(UART0_SPEED_LOW_ID + uart_base, &data, &found);
-			uart_speed |= data;
+			SoftEEPROMRead(UART0_SPEED_LOW_ID + uart_base, &data2, &found);
+			uart_speed =  (data << 16 & 0xFFFF0000) | (data2 & 0x0000FFFF);
 			
 			SoftEEPROMRead(UART0_CONFIG_ID + uart_base, &data, &found);
 			switch(data & UART_CONFIG_WLEN_MASK) {
@@ -457,7 +342,7 @@ int cmd_uartmode(int argc, char *argv[]) {
 			default: {cmd_print("Invalid parameter stop: %s", argv[5]); return (ERROR_UNHANDLED); }
 		}
 
-		lEEPROMRetStatus=SoftEEPROMWrite(UART0_SPEED_HIGH_ID + uart_base, uart_speed >> 8);
+		lEEPROMRetStatus=SoftEEPROMWrite(UART0_SPEED_HIGH_ID + uart_base, uart_speed >> 16);
 	    if(lEEPROMRetStatus != 0) {
 			cmd_print("\r\nAn error occurred during a soft EEPROM write operation");
 			return output_error(lEEPROMRetStatus);
@@ -502,6 +387,15 @@ int cmd_help(int argc, char *argv[]) {
     return(0);
 }
 
+/* This function stops clearing the watchdog interrupt. As a consequence
+the board will perform a reset.
+*/
+int cmd_restart(int argc, char *argv[]) {
+	extern volatile unsigned short should_reset;
+	
+	should_reset=1;
+	
+}
 
 void print_uart(struct console_state *hs) {
 	int i;
@@ -522,7 +416,8 @@ tCmdLineEntry g_sCmdTable[] = {
     { "help",   cmd_help,      " : Display list of commands" },
     { "h",      cmd_help,   "    : alias for help" },
     { "?",      cmd_help,   "    : alias for help" },
-    { "reset",      cmd_clear,  "    : Reset soft EEPROM - Usage: reset" },
+    { "clear",  cmd_clear,  "    : Reset soft EEPROM - Usage: clear" },
+    { "restart",  cmd_restart,  "    : Restart software  - Usage: restart" },
     { "ipaddr", cmd_static_ipaddr,  ": set/display static ipaddr address - Usage: ipaddr [addr mask gateway]" },
     { "ipmode", cmd_ipmode, ": set/display ip acquisition mode - Usage: ipmode [dhcp|static]" },
     { "uart",   cmd_uartmode, ": set/display uart - Usage: uart <id> <speed> <len> <stop> <parity>" },
