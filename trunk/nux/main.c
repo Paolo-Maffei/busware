@@ -70,34 +70,14 @@ time. */
 #define GPIO_PORTF_DATA_R       (*((volatile unsigned long *)0x400253FC))
 
 /*-----------------------------------------------------------*/
-
-
-int ETHServiceTaskInit(const unsigned long ulPort);
-int ETHServiceTaskFlush(const unsigned long ulPort, const unsigned long flCmd);
-void LWIPServiceTaskInit(void *pvParameters);
-
-
 void console( void *pvParameters );
 static void prvSetupHardware( void ); // configure the hardware
 
-/*
- * The idle hook is used to run a test of the scheduler context switch
- * mechanism.
- */
-void vApplicationIdleHook( void ) __attribute__((naked));
 /*-----------------------------------------------------------*/
 
 /* The queue used to send messages from UART1 device. */
 xQueueHandle xUART1Queue;
 
-
-/* The welcome text. */
-const portCHAR * const pcWelcomeMessage = "   nux 1.0";
-
-/* Variables used to detect the test in the idle hook failing. */
-unsigned portLONG ulIdleError = pdFALSE;
-
-unsigned int inthandler = 1;
 volatile unsigned short should_reset; // watchdog variable to perform a reboot
 
 /*-----------------------------------------------------------*/
@@ -266,13 +246,6 @@ void prvSetupHardware( void ){
     GPIOPinTypeUART(GPIO_PORTA_BASE, GPIO_PIN_0 | GPIO_PIN_1);
 	GPIOPinTypeUART(GPIO_PORTD_BASE, GPIO_PIN_2 | GPIO_PIN_3);
 
-    //
-    // Check to make sure the UART peripheral is present.
-    //
-    if(!SysCtlPeripheralPresent(SYSCTL_PERIPH_UART1)) {
-		inthandler=99; // debug code
-    }
-
 
     lEEPROMRetStatus = SoftEEPROMRead(UART0_SPEED_HIGH_ID, &data, &found);
 	if(lEEPROMRetStatus == 0 && found) {
@@ -310,7 +283,7 @@ void prvSetupHardware( void ){
     // Check to see if an error occurred.
     //
     if(SoftEEPROMInit(0x1F000, 0x20000, 0x800) != 0)  {
-		inthandler=77;
+		LWIPDebug("SoftEEPROM initialisation failed.");
     }
 
 
