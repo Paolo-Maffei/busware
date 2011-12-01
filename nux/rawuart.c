@@ -41,11 +41,13 @@ void readuart_thread(void *pvParameters) {
 	struct netconn *conn, *newconn;
 	err_t err;
 	struct netbuf *buf;
-	portCHAR data;
-	void *indata;
+	portCHAR *data;
 	u16_t len;
+	short i;
 	extern xQueueHandle xUART1Queue;
 
+
+	
 	/* Create a new connection identifier. */
 	conn = netconn_new(NETCONN_TCP);
 
@@ -64,22 +66,26 @@ void readuart_thread(void *pvParameters) {
 		
 		for(;;) {
 			len = uxQueueMessagesWaiting(xUART1Queue);
-			while(len > 0) {
-				if (xQueueReceive( xUART1Queue, &data, portMAX_DELAY) == pdPASS) {
-					err = netconn_write(newconn, &data, sizeof(portCHAR), NETCONN_COPY);
-					if(err != ERR_OK) {
-						LWIP_DEBUGAPPS("rawuart netconn_write err: %d\r\n",err);
-
-						goto finish;
-					}
+			if( len > 0) {
+				data = (portCHAR *)pvPortMalloc(len);
+				for(i=0; i < len;i++) {
+					xQueueReceive( xUART1Queue, data+i, portMAX_DELAY);
 				}
-				len--;
+				err = netconn_write(newconn, data, len, NETCONN_COPY);
+				vPortFree(data);
+				if(err != ERR_OK) {
+					LWIP_DEBUGAPPS("rawuart netconn_write err: %d\r\n",err);
+
+					goto finish;
+				}
 			}
 
 			buf = netconn_recv(newconn);
 			if (buf != NULL) {
-				netbuf_data(buf, &indata, &len);
-				UARTSend(UART1_BASE,indata,len);
+				do {
+					netbuf_data(buf, (void *)&data, &len);
+					UARTSend(UART1_BASE,data,len);
+				} while (netbuf_next(buf) > 0); // read all data
 				netbuf_delete(buf);
 			} else if (netconn_err(newconn) != ERR_TIMEOUT) {
 				LWIP_DEBUGAPPS("rawuart netconn_recv err: %d\r\n",netconn_err(newconn));

@@ -79,10 +79,7 @@ void UART1IntHandler(void) {
 	portCHAR cChar;
 	/* The queue used to send messages from UART1 device. */
 	extern xQueueHandle xUART1Queue;
-	extern unsigned int inthandler;
-    //
-    // Get the interrrupt status.
-    //
+
     ulStatus = UARTIntStatus(UART1_BASE, true);
 
     //
@@ -103,8 +100,8 @@ void UART1IntHandler(void) {
 // Send a string to the UART.
 //
 //*****************************************************************************
-void UARTSend(unsigned long ulBase, const unsigned char *pucBuffer, unsigned long ulCount) {
-	unsigned int i;
+void UARTSend(unsigned long ulBase, const unsigned char *pucBuffer, unsigned short ulCount) {
+	unsigned short i;
 	
     for(i = 0; i < ulCount; i++) {
        	UARTCharPut(ulBase, pucBuffer[i]); // Send the character to the UART output.

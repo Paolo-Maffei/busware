@@ -151,7 +151,7 @@ extern unsigned long EthernetPHYRead(unsigned long ulBase,
 //
 //*****************************************************************************
 #ifndef DEPRECATED
-#include "driverlib/sysctl.h"
+#include "sysctl.h"
 #define EthernetInit(a)                         \
         EthernetInitExpClk(a, SysCtlClockGet())
 #define EthernetPacketNonBlockingGet(a, b, c) \

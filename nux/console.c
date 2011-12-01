@@ -39,8 +39,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 struct console_state *cmd_out;
 
-char welcome[] = "\r\nNUX console V1.0\r\nType \'help\' for help.\r\n";
-char prompt[] = "\r\nnux> ";
+const portCHAR * const welcome = "\r\nNUX console V1.0\r\nType \'help\' for help.\r\n";
+const portCHAR * const prompt = "\r\nnux> ";
 
 /* Helper function to print a line to a virtual screen
 */
