@@ -31,6 +31,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "utils/ustdlib.h"
 #include "console.h"
 
+extern const portCHAR * const prompt;
+extern const portCHAR * const welcome;
+
+const portCHAR * const UNKNOWN_COMMAND = "Unknown command\n";
+const portCHAR * const TOO_MANY_ARGS ="Too many arguments for command processor!\n";
+
 enum telnet_states {
   ES_NONE = 0,
   ES_ACCEPTED,
@@ -44,9 +50,8 @@ struct telnet_state {
 };
 
 void print_tcp(struct console_state *hs,struct tcp_pcb *pcb) {
-	int i,len;
-	
-	len = tcp_sndbuf(pcb);
+	int i;
+//TODO: check free send buffer	
 	for(i=0;i<=hs->line;i++) {
 		tcp_write(pcb, hs->lines[i], strlen(hs->lines[i]), 1);
 		vPortFree(hs->lines[i]);
@@ -88,7 +93,6 @@ err_t telnet_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t err) {
 	int len,i,cmd_status;
  	struct telnet_state *es;
 
-	extern char prompt[];
 		
   	LWIP_ASSERT("arg != NULL",arg != NULL);
   	es = (struct telnet_state *)arg;
@@ -106,8 +110,8 @@ err_t telnet_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t err) {
 		es->line[0] = 0;
 		cmd_buf = (char *)pvPortMalloc(TELNETD_CONF_LINELEN);
 		
-		len = sprintf(cmd_buf, prompt);
-		err = tcp_write(tpcb, cmd_buf, len, 1);
+
+		err = tcp_write(tpcb, prompt, ustrlen(prompt), 0);
 
 		if(err == ERR_OK) {
 			tcp_output(tpcb);
@@ -131,7 +135,7 @@ err_t telnet_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t err) {
 			return ERR_OK;
 		}
 		len=ustrlen(es->line);
-		es->line[len-2] = (char)0;
+		es->line[len-2] = (char)0; // remove cr+lf
 		cmd_buf = (char *)pvPortMalloc(TELNETD_CONF_LINELEN);
 
 		cmd_out = (struct console_state *)pvPortMalloc(sizeof(struct console_state));
@@ -146,15 +150,13 @@ err_t telnet_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t err) {
 		vPortFree(cmd_out);
 
         if(cmd_status == CMDLINE_BAD_CMD)  {
-			len = sprintf(cmd_buf, "Unknown command");
-			err = tcp_write(tpcb, cmd_buf, len, 1);
+			err = tcp_write(tpcb, UNKNOWN_COMMAND, ustrlen(UNKNOWN_COMMAND), 0);
 		} else if(cmd_status == CMDLINE_TOO_MANY_ARGS) {
-			len = sprintf(cmd_buf, "Too many arguments for command processor!");
-			err = tcp_write(tpcb, cmd_buf, len, 1);
+			err = tcp_write(tpcb, TOO_MANY_ARGS, ustrlen(TOO_MANY_ARGS), 0);
         }
 
-		len = sprintf(cmd_buf, prompt);
-		err = tcp_write(tpcb, cmd_buf, len, 1);
+
+		err = tcp_write(tpcb, prompt, ustrlen(prompt), 0);
 
 		if(err == ERR_OK) {
 			tcp_output(tpcb);
@@ -173,7 +175,6 @@ err_t telnet_accept(void *arg, struct tcp_pcb *tpcb, err_t err) {
 	int len;
 	char *cmd_buf;
     struct telnet_state *es;
-	extern char welcome[];
 	
 	LWIP_UNUSED_ARG(arg);
 

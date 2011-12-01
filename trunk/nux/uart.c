@@ -100,7 +100,7 @@ void UART1IntHandler(void) {
 // Send a string to the UART.
 //
 //*****************************************************************************
-void UARTSend(unsigned long ulBase, const unsigned char *pucBuffer, unsigned short ulCount) {
+void UARTSend(unsigned long ulBase, const char *pucBuffer, unsigned short ulCount) {
 	unsigned short i;
 	
     for(i = 0; i < ulCount; i++) {

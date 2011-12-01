@@ -68,6 +68,7 @@ static struct pbuf * low_level_input(struct netif *netif);
 static err_t low_level_output(struct netif *netif, struct pbuf *p);
 static err_t low_level_transmit(struct netif *netif, struct pbuf *p);
 
+extern int blinky(unsigned int count);
 
 
 //*****************************************************************************
@@ -101,7 +102,7 @@ static err_t low_level_init(struct netif *netif)
 	// set MAC hardware address
 	ETHServiceTaskMACAddress(0, &(netif->hwaddr[0]));
 
-	LWIP_DEBUGF(NETIF_DEBUG, ("low_level_init: MAC address is \%"X8_F"%"X8_F"%"X8_F"%"X8_F"%"X8_F"%"X8_F"\n",
+	LWIP_DEBUGF(NETIF_DEBUG, ("low_level_init: MAC address is %X8.%X8.%X8.%X8.%X8.%X8\n",
 					netif->hwaddr[0],netif->hwaddr[1],netif->hwaddr[2],
 					netif->hwaddr[3],netif->hwaddr[4],netif->hwaddr[5]));
 
@@ -251,11 +252,11 @@ static struct pbuf * low_level_input(struct netif *netif)
 static void ethernetif_input(void *pParams)
 {
 	struct netif *netif;
-	struct ethernetif *ethernetif;
+//	struct ethernetif *ethernetif;
 	struct pbuf *p;
 
 	netif = (struct netif*) pParams;
-	ethernetif = netif->state;
+//	ethernetif = netif->state;
 
 	for (;;)
 	{

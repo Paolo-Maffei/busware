@@ -30,8 +30,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "softeeprom.h"
 #include "console.h"
 
+#include "stdlib.h"
+#include <string.h>
 
 
+
+extern void UARTSend(unsigned long ulBase, const char *pucBuffer, unsigned short ulCount);
+extern int UARTgets(unsigned long ulBase, char *pcBuf, unsigned long ulLen);
 
 /*****************************************************************************
 ! The buffer that holds the command line entry.
@@ -291,11 +296,12 @@ int cmd_uartmode(int argc, char *argv[]) {
 				case UART_CONFIG_WLEN_7: { uart_len=7; break;}
 				case UART_CONFIG_WLEN_6: { uart_len=6; break;}
 				case UART_CONFIG_WLEN_5: { uart_len=5; break;}
-
+				default: {uart_len=0;}
             }
 			switch(data & UART_CONFIG_STOP_MASK) {
 				case UART_CONFIG_STOP_ONE: { uart_stop=1; break;}
 				case UART_CONFIG_STOP_TWO: { uart_stop=2; break;}
+				default: {uart_stop=0;}
 			}
 			
 			switch(data & UART_CONFIG_PAR_MASK) {
@@ -304,6 +310,7 @@ int cmd_uartmode(int argc, char *argv[]) {
 				case UART_CONFIG_PAR_ODD: { uart_parity='O'; break;}
 				case UART_CONFIG_PAR_ONE: { uart_parity='1'; break;}
 				case UART_CONFIG_PAR_ZERO: { uart_parity='0'; break;}
+				default: {uart_parity='X';}
 			}
 			
 			cmd_print("UART%d %d %d %c %d", uart_base, uart_speed,  uart_len , uart_parity, uart_stop );
@@ -351,6 +358,7 @@ int cmd_uartmode(int argc, char *argv[]) {
 
 		SoftEEPROMWrite(UART0_CONFIG_ID + uart_base, data);
 	}
+	return(0);
 }
 
 //*****************************************************************************
@@ -394,7 +402,7 @@ int cmd_restart(int argc, char *argv[]) {
 	extern volatile unsigned short should_reset;
 	
 	should_reset=1;
-	
+	return(0);
 }
 
 void print_uart(struct console_state *hs) {
