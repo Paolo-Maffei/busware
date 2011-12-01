@@ -18,7 +18,7 @@ DEBUG=-g
 OPTIM=-Os
 
 
-CFLAGS=$(DEBUG) -I . -I utils -I softeeprom -I $(RTOS_SOURCE_DIR)/include -I $(RTOS_SOURCE_DIR)/portable/GCC/ARM_CM3 \
+CFLAGS=$(DEBUG) -std=c99  -Wall -I . -I utils -I softeeprom -I $(RTOS_SOURCE_DIR)/include -I $(RTOS_SOURCE_DIR)/portable/GCC/ARM_CM3 \
 		-D GCC_ARMCM3 -D inline= -mthumb -mcpu=cortex-m3 $(OPTIM) -T$(LDSCRIPT) \
 		-D sprintf=usprintf -D snprintf=usnprintf -D printf=uipprintf -I $(LWIP_SOURCE_DIR) \
 		-I $(LWIP_SOURCE_DIR)/src/include/ipv4 -I $(LWIP_SOURCE_DIR)/src/include -I $(LWIP_SOURCE_DIR)/contrib/port/FreeRTOS/LM3S \

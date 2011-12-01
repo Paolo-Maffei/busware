@@ -36,6 +36,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define LWIP_DEBUGAPPS while(0)((int (*)(char *, ...))0)
 #endif
 
+extern void UARTSend(unsigned long ulBase, const char *pucBuffer, unsigned short ulCount);
 
 void readuart_thread(void *pvParameters) {
 	struct netconn *conn, *newconn;

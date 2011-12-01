@@ -31,6 +31,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "hw_watchdog.h"
 
 /* driverlib library includes */
+#include "interrupt.h"
 #include "sysctl.h"
 #include "gpio.h"
 #include "grlib.h"
@@ -101,8 +102,9 @@ extern void *_sbrk(int incr) {
     return (void *)prev_heap;
 }
 
+extern void UARTSend(unsigned long ulBase, const unsigned char *pucBuffer, unsigned short ulCount);
 
-int blinky(unsigned int count) {
+void blinky(unsigned int count) {
 
     while( 0 < count-- )    {
         //
@@ -187,7 +189,6 @@ int main( void ) {
 /*-----------------------------------------------------------*/
 
 void prvSetupHardware( void ){
-    volatile unsigned long ulLoop;
 	tBoolean found;
     long lEEPROMRetStatus;
     unsigned short data,data2;
@@ -215,10 +216,6 @@ void prvSetupHardware( void ){
     //
     SYSCTL_RCGC2_R = SYSCTL_RCGC2_GPIOF;
 
-    //
-    // Do a dummy read to insert a few cycles after enabling the peripheral.
-    //
-    ulLoop = SYSCTL_RCGC2_R;
     //
     // Enable the GPIO pin for the LED (PF0).  Set the direction as output, and
     // enable the GPIO pin for digital function.
@@ -313,7 +310,7 @@ void LWIPDebug(const char *pcString, ...) {
  	buf = (char *)pvPortMalloc(TELNETD_CONF_LINELEN);
     va_start(vaArgP, pcString);
     len = uvsnprintf(buf, TELNETD_CONF_LINELEN, pcString, vaArgP);
-	UARTSend(UART0_BASE,buf,len);
+	UARTSend(UART0_BASE,(const unsigned char *)buf,len);
     va_end(vaArgP);
 	vPortFree(buf);
 }

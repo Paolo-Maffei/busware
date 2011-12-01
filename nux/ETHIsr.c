@@ -14,6 +14,7 @@
 #include "hw_memmap.h"
 #include "hw_types.h"
 #include "debug.h"
+#include "flash.h"
 #include "gpio.h"
 #include "ethernet.h"
 #include "interrupt.h"
