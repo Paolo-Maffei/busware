@@ -16,7 +16,6 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 *************************************************************************/
 
-
 /* Scheduler includes. */
 #include "FreeRTOS.h"
 #include "task.h"
@@ -37,6 +36,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "driverlib/grlib.h"
 #include "driverlib/uart.h"
 #include "driverlib/watchdog.h"
+#include "driverlib/debug.h"
 
 #include "lwip/tcpip.h"
 #include "lwiplib.h"
@@ -50,6 +50,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "console.h"
 
 /*-----------------------------------------------------------*/
+static const char * const g_pcHex = "0123456789abcdef";
 
 
 #define mainBASIC_TELNET_STACK_SIZE            ( configMINIMAL_STACK_SIZE * 2 )
@@ -102,7 +103,7 @@ extern void *_sbrk(int incr) {
     return (void *)prev_heap;
 }
 
-extern void UARTSend(unsigned long ulBase, const unsigned char *pucBuffer, unsigned short ulCount);
+extern void UARTSend(unsigned long ulBase, const char *pucBuffer, unsigned short ulCount);
 
 void blinky(unsigned int count) {
 
@@ -301,18 +302,180 @@ void vApplicationStackOverflowHook(xTaskHandle *pxTask, signed portCHAR *pcTaskN
 	LWIPDebug("Stackoverflow %s",pcTaskName);
 }
 
+/* This function can't fragment the memory. The message gets parsed, formatted and print to UART0.
 
+ Only the following formatting characters are supported:
+ - \%c to print a character
+ - \%d to print a decimal value
+ - \%s to print a string
+  - \%u to print an unsigned decimal value
+  - \%x to print a hexadecimal value using lower case letters
+  - \%X to print a hexadecimal value using lower case letters (not upper case
+  letters as would typically be used)
+  - \%p to print a pointer as a hexadecimal value
+  - \%\% to print out a \% character
+ 
+  For \%s, \%d, \%u, \%p, \%x, and \%X, an optional number may reside
+  between the \% and the format character, which specifies the minimum number
+  of characters to use for that value; if preceded by a 0 then the extra
+  characters will be filled with zeros instead of spaces.  For example,
+  ``\%8d'' will use eight characters to print the decimal value with spaces
+  added to reach eight; ``\%08d'' will use eight characters as well but will
+  add zeroes instead of spaces.
+ 
+  The type of the arguments after \e pcString must match the requirements of
+  the format string.  For example, if an integer was passed where a string
+  was expected, an error of some kind will most likely occur.
+ 
+*/
 void LWIPDebug(const char *pcString, ...) {
+	unsigned long ulIdx, ulValue, ulPos, ulCount, ulBase, ulNeg;
+	char *pcStr, pcBuf[16], cFill;
 	va_list vaArgP;
-	char *buf;
-	int len;
+	ASSERT(pcString != 0);
 
- 	buf = (char *)pvPortMalloc(TELNETD_CONF_LINELEN);
-    va_start(vaArgP, pcString);
-    len = uvsnprintf(buf, TELNETD_CONF_LINELEN, pcString, vaArgP);
-	UARTSend(UART0_BASE,(const unsigned char *)buf,len);
-    va_end(vaArgP);
-	vPortFree(buf);
+	va_start(vaArgP, pcString);
+	while(*pcString) {
+		// Find the first non-% character, or the end of the string.
+		for(ulIdx = 0; (pcString[ulIdx] != '%') && (pcString[ulIdx] != '\0'); ulIdx++) { }
+
+		UARTSend(UART0_BASE, pcString, ulIdx);
+		pcString += ulIdx;
+
+		if(*pcString == '%') { // See if the next character is a %.
+			pcString++;
+
+			ulCount = 0;
+			cFill = ' ';
+
+			// It may be necessary to get back here to process more characters.
+			// Goto's aren't pretty, but effective.  I feel extremely dirty for
+			// using not one but two of the beasts.
+			again:
+
+			switch(*pcString++) {
+				case '0':
+				case '1':
+				case '2':
+				case '3':
+				case '4':
+				case '5':
+				case '6':
+				case '7':
+				case '8':
+				case '9': {
+					// If this is a zero, and it is the first digit, then the
+					// fill character is a zero instead of a space.
+					if((pcString[-1] == '0') && (ulCount == 0)) {
+						cFill = '0';
+					}
+
+					ulCount *= 10;
+					ulCount += pcString[-1] - '0';
+
+					goto again;
+				}
+
+				case 'c': {
+					ulValue = va_arg(vaArgP, unsigned long);
+					UARTSend(UART0_BASE,(char *)&ulValue, 1);
+					break;
+				}
+
+				case 'd': {
+					ulValue = va_arg(vaArgP, unsigned long);
+					ulPos = 0;
+
+					// If the value is negative, make it positive and indicate
+					// that a minus sign is needed.
+					if((long)ulValue < 0) {
+						ulValue = -(long)ulValue;
+						ulNeg = 1;
+					} else {
+						ulNeg = 0;
+					}
+					ulBase = 10;
+					goto convert;
+				}
+				case 's': {
+					pcStr = va_arg(vaArgP, char *);
+					for(ulIdx = 0; pcStr[ulIdx] != '\0'; ulIdx++) {}
+
+					UARTSend(UART0_BASE,pcStr, ulIdx);
+
+					if(ulCount > ulIdx) {
+						ulCount -= ulIdx;
+						while(ulCount--) {
+							UARTSend(UART0_BASE," ", 1);
+						}
+					}
+					break;
+				}
+				case 'u': {
+					ulValue = va_arg(vaArgP, unsigned long);
+					ulPos = 0;
+					ulBase = 10;
+					ulNeg = 0;
+					goto convert;
+				}
+				case 'x':
+				case 'X':
+				case 'p': {
+					ulValue = va_arg(vaArgP, unsigned long);
+					ulPos = 0;
+					ulBase = 16;
+					ulNeg = 0;
+					convert:
+					for(ulIdx = 1;
+					(((ulIdx * ulBase) <= ulValue) &&
+						(((ulIdx * ulBase) / ulBase) == ulIdx));
+					ulIdx *= ulBase, ulCount--) {}
+
+					// If the value is negative, reduce the count of padding
+					// characters needed.
+					if(ulNeg) {
+						ulCount--;
+					}
+
+					// If the value is negative and the value is padded with
+					// zeros, then place the minus sign before the padding.
+					if(ulNeg && (cFill == '0')) {
+						pcBuf[ulPos++] = '-';
+						ulNeg = 0;
+					}
+
+					// Provide additional padding at the beginning of the
+					// string conversion if needed.
+					if((ulCount > 1) && (ulCount < 16)) {
+						for(ulCount--; ulCount; ulCount--) {
+							pcBuf[ulPos++] = cFill;
+						}
+					}
+
+					if(ulNeg) {
+						pcBuf[ulPos++] = '-';
+					}
+
+					// Convert the value into a string.
+					for(; ulIdx; ulIdx /= ulBase) {
+						pcBuf[ulPos++] = g_pcHex[(ulValue / ulIdx) % ulBase];
+					}
+
+					UARTSend(UART0_BASE,pcBuf, ulPos);
+					break;
+				}
+				case '%': {
+					UARTSend(UART0_BASE,pcString - 1, 1);
+					break;
+				}
+				default: {
+					UARTSend(UART0_BASE,"ERROR", 5);
+					break;
+				}
+			}
+		}
+	}
+	va_end(vaArgP);
 }
 
 /*
