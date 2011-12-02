@@ -24,19 +24,19 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "semphr.h"
 
 /* Hardware library includes. */
-#include "hw_memmap.h"
-#include "hw_types.h"
-#include "hw_sysctl.h"
-#include "hw_ints.h"
-#include "hw_watchdog.h"
+#include "inc/hw_memmap.h"
+#include "inc/hw_types.h"
+#include "inc/hw_sysctl.h"
+#include "inc/hw_ints.h"
+#include "inc/hw_watchdog.h"
 
 /* driverlib library includes */
-#include "interrupt.h"
-#include "sysctl.h"
-#include "gpio.h"
-#include "grlib.h"
-#include "uart.h"
-#include "watchdog.h"
+#include "driverlib/interrupt.h"
+#include "driverlib/sysctl.h"
+#include "driverlib/gpio.h"
+#include "driverlib/grlib.h"
+#include "driverlib/uart.h"
+#include "driverlib/watchdog.h"
 
 #include "lwip/tcpip.h"
 #include "lwiplib.h"

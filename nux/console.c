@@ -22,9 +22,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "queue.h"
 #include "semphr.h"
 
-#include "hw_types.h"
-#include "hw_memmap.h"
-#include "uart.h"
+#include "inc/hw_types.h"
+#include "inc/hw_memmap.h"
+#include "driverlib/uart.h"
 #include "utils/cmdline.h"
 #include "utils/ustdlib.h"
 #include "softeeprom.h"

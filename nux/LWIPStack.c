@@ -38,15 +38,15 @@
 // Luminary Micro DriverLib Header Files required for this interface driver.
 //
 //*****************************************************************************
-#include "hw_ethernet.h"
-#include "hw_ints.h"
-#include "hw_memmap.h"
-#include "hw_types.h"
-#include "debug.h"
-#include "gpio.h"
-#include "ethernet.h"
-#include "interrupt.h"
-#include "sysctl.h"
+#include "inc/hw_ethernet.h"
+#include "inc/hw_ints.h"
+#include "inc/hw_memmap.h"
+#include "inc/hw_types.h"
+#include "driverlib/debug.h"
+#include "driverlib/gpio.h"
+#include "driverlib/ethernet.h"
+#include "driverlib/interrupt.h"
+#include "driverlib/sysctl.h"
 
 #include "telnetd.h"
 #include "rawuart.h"
