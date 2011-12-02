@@ -5,26 +5,43 @@
 
 RTOS_SOURCE_DIR=FreeRTOS/Source
 LWIP_SOURCE_DIR=lwip-1.3.2
-LUMINARY_DRIVER_DIR=FreeRTOS/Common/drivers/LuminaryMicro
+LUMINARY_DRIVER_DIR=LuminaryMicro
 
 CC=arm-none-eabi-gcc
 OBJCOPY=arm-none-eabi-objcopy
 LDSCRIPT=standalone.ld
 
-# should use --gc-sections but the debugger does not seem to be able to cope with the option.
-LINKER_FLAGS=-nostartfiles -Xlinker -onux.axf -Xlinker -M -Xlinker -Map=nux.map -Xlinker --no-gc-sections
+LINKER_FLAGS=-nostartfiles -Xlinker -onux.axf -Xlinker -M -Xlinker -Map=nux.map -Xlinker --gc-sections --entry ResetISR
 
-DEBUG=-g
-OPTIM=-Os
+IPATH=.
+IPATH+=utils
+IPATH+=softeeprom
+IPATH+=$(RTOS_SOURCE_DIR)/include
+IPATH+=$(RTOS_SOURCE_DIR)/portable/GCC/ARM_CM3
+IPATH+=$(LUMINARY_DRIVER_DIR)
+IPATH+=$(LWIP_SOURCE_DIR)
+IPATH+=$(LWIP_SOURCE_DIR)/src/include/ipv4 
+IPATH+=$(LWIP_SOURCE_DIR)/src/include
+IPATH+=$(LWIP_SOURCE_DIR)/contrib/port/FreeRTOS/LM3S
 
+CFLAGS= -std=c99                                   \
+		-Wall                                      \
+		-D GCC_ARMCM3                              \
+		-D inline=                                 \
+		-mthumb                                    \
+		-mcpu=cortex-m3                            \
+		-Os                                        \
+		-T$(LDSCRIPT)                              \
+		-D sprintf=usprintf                        \
+		-D snprintf=usnprintf                      \
+		-D printf=uipprintf                        \
+		-ffunction-sections                        \
+		-fdata-sections                            \
+		-g -D DEBUG
 
-CFLAGS=$(DEBUG) -std=c99  -Wall -I . -I utils -I softeeprom -I $(RTOS_SOURCE_DIR)/include -I $(RTOS_SOURCE_DIR)/portable/GCC/ARM_CM3 \
-		-D GCC_ARMCM3 -D inline= -mthumb -mcpu=cortex-m3 $(OPTIM) -T$(LDSCRIPT) \
-		-D sprintf=usprintf -D snprintf=usnprintf -D printf=uipprintf -I $(LWIP_SOURCE_DIR) \
-		-I $(LWIP_SOURCE_DIR)/src/include/ipv4 -I $(LWIP_SOURCE_DIR)/src/include -I $(LWIP_SOURCE_DIR)/contrib/port/FreeRTOS/LM3S \
-		-ffunction-sections -fdata-sections -I $(LUMINARY_DRIVER_DIR)
 
 SOURCE=	main.c \
+		startup.c \
 		uart.c \
 		console.c \
 		softeeprom/softeeprom.c \
@@ -69,30 +86,31 @@ SOURCE=	main.c \
 		$(LWIP_SOURCE_DIR)/src/core/ipv4/inet_chksum.c \
 		$(LWIP_SOURCE_DIR)/src/core/ipv4/ip_addr.c \
 		$(LWIP_SOURCE_DIR)/src/core/ipv4/ip.c \
-		$(LWIP_SOURCE_DIR)/src/core/ipv4/ip_frag.c
+		$(LWIP_SOURCE_DIR)/src/core/ipv4/ip_frag.c \
+		$(LWIP_SOURCE_DIR)/src/netif/etharp.c \
+		$(LWIP_SOURCE_DIR)/src/netif/loopif.c
 
-		# NETIFFILES: Files implementing various generic network interface functions.
-NETIFFILES=$(LWIP_SOURCE_DIR)/src/netif/etharp.c \
-			$(LWIP_SOURCE_DIR)/src/netif/loopif.c
+LIBS= $(LUMINARY_DRIVER_DIR)/arm-none-eabi-gcc/libdriver.a
 
-LIBS= $(LUMINARY_DRIVER_DIR)/arm-none-eabi-gcc/libdriver.a $(LUMINARY_DRIVER_DIR)/arm-none-eabi-gcc/libgr.a
+OBJS = $(SOURCE:.c=.o)
 
-OBJS = $(SOURCE:.c=.o) $(NETIFFILES:.c=.o) 
+
+#
+# Add the include file paths to CFLAGS.
+#
+CFLAGS+=${patsubst %,-I%,${subst :, ,${IPATH}}}
 
 all: nux.bin
 	 
 nux.bin : nux.axf
 	$(OBJCOPY) nux.axf -O binary nux.bin
 
-nux.axf : $(OBJS) startup.o Makefile
-	$(CC) $(CFLAGS) $(OBJS) startup.o $(LIBS) $(LINKER_FLAGS)
+nux.axf : $(OBJS) Makefile
+	$(CC) $(CFLAGS) $(OBJS) $(LIBS) $(LINKER_FLAGS)
 
 $(OBJS) : %.o : %.c Makefile FreeRTOSConfig.h
 	$(CC) -c $(CFLAGS) $< -o $@
 
-startup.o : startup.c Makefile
-	$(CC) -c $(CFLAGS) -O1 startup.c -o startup.o
-		
 clean :
 	touch Makefile
 	rm -f $(OBJS)

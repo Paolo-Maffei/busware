@@ -7,7 +7,7 @@
 #define ETHISR_H_
 
 
-#include "hw_ethernet.h"
+#include "inc/hw_ethernet.h"
 
 //*****************************************************************************
 //
