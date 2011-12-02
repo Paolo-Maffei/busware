@@ -26,11 +26,11 @@
 //
 //*****************************************************************************
 
-#include "hw_types.h"
-#include "hw_flash.h"
-#include "sysctl.h"
-#include "flash.h"
-#include "debug.h"
+#include "inc/hw_types.h"
+#include "inc/hw_flash.h"
+#include "driverlib/sysctl.h"
+#include "driverlib/flash.h"
+#include "driverlib/debug.h"
 #include "softeeprom.h"
 
 //*****************************************************************************
