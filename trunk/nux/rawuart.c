@@ -26,9 +26,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "lwip/sys.h"
 #include "lwip/api.h"
 
-#include "hw_memmap.h"
-#include "hw_types.h"
-#include "uart.h"
+#include "inc/hw_memmap.h"
+#include "inc/hw_types.h"
+#include "driverlib/uart.h"
 
 #ifdef LWIP_DEBUG
 #define LWIP_DEBUGAPPS LWIPDebug

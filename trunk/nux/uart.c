@@ -23,14 +23,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "semphr.h"
 
 #include <stdarg.h>
-#include "hw_ints.h"
-#include "hw_memmap.h"
-#include "hw_types.h"
-#include "gpio.h"
-#include "interrupt.h"
-#include "sysctl.h"
-#include "uart.h"
-#include "debug.h"
+#include "inc/hw_ints.h"
+#include "inc/hw_memmap.h"
+#include "inc/hw_types.h"
+#include "driverlib/gpio.h"
+#include "driverlib/interrupt.h"
+#include "driverlib/sysctl.h"
+#include "driverlib/uart.h"
+#include "driverlib/debug.h"
 
 //*****************************************************************************
 //
