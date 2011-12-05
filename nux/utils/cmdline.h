@@ -1,61 +1,35 @@
-//*****************************************************************************
-//
-// cmdline.h - Prototypes for command line processing functions.
-//
-// Copyright (c) 2007-2011 Texas Instruments Incorporated.  All rights reserved.
-// Software License Agreement
-// 
-// Texas Instruments (TI) is supplying this software for use solely and
-// exclusively on TI's microcontroller products. The software is owned by
-// TI and/or its suppliers, and is protected under applicable copyright
-// laws. You may not combine this software with "viral" open-source
-// software in order to form a larger program.
-// 
-// THIS SOFTWARE IS PROVIDED "AS IS" AND WITH ALL FAULTS.
-// NO WARRANTIES, WHETHER EXPRESS, IMPLIED OR STATUTORY, INCLUDING, BUT
-// NOT LIMITED TO, IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE APPLY TO THIS SOFTWARE. TI SHALL NOT, UNDER ANY
-// CIRCUMSTANCES, BE LIABLE FOR SPECIAL, INCIDENTAL, OR CONSEQUENTIAL
-// DAMAGES, FOR ANY REASON WHATSOEVER.
-// 
-// This is part of revision 8049 of the Stellaris Firmware Development Package.
-//
-//*****************************************************************************
+/*************************************************************************
+Copyright (C) 2011  busware
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+*************************************************************************/
 
 #ifndef __CMDLINE_H__
 #define __CMDLINE_H__
 
-//*****************************************************************************
-//
-// If building with a C++ compiler, make all of the definitions in this header
-// have a C binding.
-//
-//*****************************************************************************
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 
-//*****************************************************************************
-//
-//! \addtogroup cmdline_api
-//! @{
-//
-//*****************************************************************************
-
-//*****************************************************************************
-//
-//! Defines the value that is returned if the command is not found.
-//
-//*****************************************************************************
 #define CMDLINE_BAD_CMD         (-1)
-
-//*****************************************************************************
-//
-//! Defines the value that is returned if there are too many arguments.
-//
-//*****************************************************************************
 #define CMDLINE_TOO_MANY_ARGS   (-2)
+#define ERROR_UNHANDLED		    (-3)
+#define ERROR_MEM			    (-4)
+#define CMDLINE_QUIT		    (-5)
+
 
 //*****************************************************************************
 //
@@ -64,56 +38,16 @@ extern "C"
 //*****************************************************************************
 typedef int (*pfnCmdLine)(int argc, char *argv[]);
 
-//*****************************************************************************
-//
-//! Structure for an entry in the command list table.
-//
-//*****************************************************************************
-typedef struct
-{
-    //
-    //! A pointer to a string containing the name of the command.
-    //
-    const char *pcCmd;
-
-    //
-    //! A function pointer to the implementation of the command.
-    //
+typedef struct {
+    const char *cmd;
     pfnCmdLine pfnCmd;
+    const char *help;
+} cmdline_entry;
 
-    //
-    //! A pointer to a string of brief help text for the command.
-    //
-    const char *pcHelp;
-}
-tCmdLineEntry;
+extern cmdline_entry g_sCmdTable[];
 
-//*****************************************************************************
-//
-//! This is the command table that must be provided by the application.
-//
-//*****************************************************************************
-extern tCmdLineEntry g_sCmdTable[];
+extern int cmdline_process(char *pcCmdLine);
 
-//*****************************************************************************
-//
-// Close the Doxygen group.
-//! @}
-//
-//*****************************************************************************
-
-//*****************************************************************************
-//
-// Prototypes for the APIs.
-//
-//*****************************************************************************
-extern int CmdLineProcess(char *pcCmdLine);
-
-//*****************************************************************************
-//
-// Mark the end of the C bindings section for C++ compilers.
-//
-//*****************************************************************************
 #ifdef __cplusplus
 }
 #endif

@@ -151,7 +151,7 @@ err_t telnet_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t err) {
         // Pass the line from the user to the command processor.  It will be
         // parsed and valid commands executed.
         //
-        cmd_status = CmdLineProcess(es->line);
+        cmd_status = cmdline_process(es->line);
 
 		print_tcp(cmd_out,tpcb);
 		vPortFree(cmd_out);
