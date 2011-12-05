@@ -377,7 +377,7 @@ int cmd_uartmode(int argc, char *argv[]) {
 //
 //*****************************************************************************
 int cmd_help(int argc, char *argv[]) {
-    tCmdLineEntry *pEntry;
+    cmdline_entry *pEntry;
 
 	cmd_print("\r\nAvailable commands\r\n------------------\r\n");
     // Point at the beginning of the command table.
@@ -387,8 +387,8 @@ int cmd_help(int argc, char *argv[]) {
     // Enter a loop to read each entry from the command table.  The end of the
     // table has been reached when the command name is NULL.
     //
-    while(pEntry->pcCmd)   {
-        cmd_print("%s%s\r\n", pEntry->pcCmd, pEntry->pcHelp);
+    while(pEntry->cmd)   {
+        cmd_print("%s%s\r\n", pEntry->cmd, pEntry->help);
         pEntry++; // Advance to the next entry in the table.
     }
 
@@ -420,7 +420,7 @@ void print_uart(struct console_state *hs) {
 //! description.
 //
 //*****************************************************************************
-tCmdLineEntry g_sCmdTable[] = {
+cmdline_entry g_sCmdTable[] = {
     { "help",   cmd_help,      " : Display list of commands" },
     { "h",      cmd_help,   "    : alias for help" },
     { "?",      cmd_help,   "    : alias for help" },
@@ -457,7 +457,7 @@ void console( void *pvParameters ) {
         // Pass the line from the user to the command processor.  It will be
         // parsed and valid commands executed.
         //
-        cmd_status = CmdLineProcess(cmd_buf);
+        cmd_status = cmdline_process(cmd_buf);
 
 		print_uart(cmd_out);
 		vPortFree(cmd_out);

@@ -3,14 +3,14 @@
 <plist version="1.0">
 <dict>
 	<key>currentDocument</key>
-	<string>telnetd.c</string>
+	<string>main.c</string>
 	<key>documents</key>
 	<array>
 		<dict>
 			<key>filename</key>
 			<string>telnetd.c</string>
 			<key>lastUsed</key>
-			<date>2011-12-02T09:08:02Z</date>
+			<date>2011-12-02T22:38:00Z</date>
 			<key>selected</key>
 			<true/>
 		</dict>
@@ -34,7 +34,7 @@
 			<key>filename</key>
 			<string>Makefile</string>
 			<key>lastUsed</key>
-			<date>2011-12-01T10:35:10Z</date>
+			<date>2011-12-02T18:10:32Z</date>
 			<key>selected</key>
 			<true/>
 		</dict>
@@ -42,7 +42,7 @@
 			<key>filename</key>
 			<string>console.c</string>
 			<key>lastUsed</key>
-			<date>2011-12-01T10:51:12Z</date>
+			<date>2011-12-02T22:24:39Z</date>
 			<key>selected</key>
 			<true/>
 		</dict>
@@ -58,7 +58,7 @@
 			<key>filename</key>
 			<string>ETHIsr.c</string>
 			<key>lastUsed</key>
-			<date>2011-12-01T10:25:42Z</date>
+			<date>2011-12-02T17:44:16Z</date>
 			<key>selected</key>
 			<true/>
 		</dict>
@@ -66,7 +66,7 @@
 			<key>filename</key>
 			<string>ETHIsr.h</string>
 			<key>lastUsed</key>
-			<date>2011-11-30T17:37:52Z</date>
+			<date>2011-12-02T17:41:26Z</date>
 			<key>selected</key>
 			<true/>
 		</dict>
@@ -82,7 +82,7 @@
 			<key>filename</key>
 			<string>lwiplib.h</string>
 			<key>lastUsed</key>
-			<date>2011-11-29T15:25:09Z</date>
+			<date>2011-12-02T18:10:37Z</date>
 			<key>selected</key>
 			<true/>
 		</dict>
@@ -90,7 +90,7 @@
 			<key>filename</key>
 			<string>LWIPStack.c</string>
 			<key>lastUsed</key>
-			<date>2011-12-01T10:31:52Z</date>
+			<date>2011-12-02T22:44:25Z</date>
 			<key>selected</key>
 			<true/>
 		</dict>
@@ -98,7 +98,7 @@
 			<key>filename</key>
 			<string>main.c</string>
 			<key>lastUsed</key>
-			<date>2011-12-01T10:20:12Z</date>
+			<date>2011-12-02T22:49:55Z</date>
 			<key>selected</key>
 			<true/>
 		</dict>
@@ -130,7 +130,7 @@
 			<key>filename</key>
 			<string>uart.c</string>
 			<key>lastUsed</key>
-			<date>2011-12-01T10:21:19Z</date>
+			<date>2011-12-02T22:49:55Z</date>
 			<key>selected</key>
 			<true/>
 		</dict>
@@ -138,7 +138,7 @@
 			<key>filename</key>
 			<string>rawuart.c</string>
 			<key>lastUsed</key>
-			<date>2011-12-01T10:20:39Z</date>
+			<date>2011-12-02T18:10:30Z</date>
 			<key>selected</key>
 			<true/>
 		</dict>
@@ -149,6 +149,16 @@
 			<date>2011-11-29T15:26:27Z</date>
 			<key>selected</key>
 			<true/>
+		</dict>
+		<dict>
+			<key>name</key>
+			<string>LuminaryMicro</string>
+			<key>regexFolderFilter</key>
+			<string>!.*/(\.[^/]*|CVS|_darcs|_MTN|\{arch\}|blib|.*~\.nib|.*\.(framework|app|pbproj|pbxproj|xcode(proj)?|bundle))$</string>
+			<key>selected</key>
+			<true/>
+			<key>sourceDirectory</key>
+			<string>LuminaryMicro</string>
 		</dict>
 		<dict>
 			<key>name</key>
@@ -200,72 +210,14 @@
 			<key>caret</key>
 			<dict>
 				<key>column</key>
-				<integer>0</integer>
+				<integer>20</integer>
 				<key>line</key>
-				<integer>102</integer>
+				<integer>20</integer>
 			</dict>
 			<key>firstVisibleColumn</key>
 			<integer>0</integer>
 			<key>firstVisibleLine</key>
-			<integer>74</integer>
-		</dict>
-		<key>ETHIsr.h</key>
-		<dict>
-			<key>caret</key>
-			<dict>
-				<key>column</key>
-				<integer>0</integer>
-				<key>line</key>
-				<integer>94</integer>
-			</dict>
-			<key>firstVisibleColumn</key>
 			<integer>0</integer>
-			<key>firstVisibleLine</key>
-			<integer>59</integer>
-		</dict>
-		<key>FreeRTOS/Common/drivers/LuminaryMicro/interrupt.h</key>
-		<dict>
-			<key>caret</key>
-			<dict>
-				<key>column</key>
-				<integer>31</integer>
-				<key>line</key>
-				<integer>54</integer>
-			</dict>
-			<key>columnSelection</key>
-			<false/>
-			<key>firstVisibleColumn</key>
-			<integer>0</integer>
-			<key>firstVisibleLine</key>
-			<integer>21</integer>
-			<key>selectFrom</key>
-			<dict>
-				<key>column</key>
-				<integer>16</integer>
-				<key>line</key>
-				<integer>54</integer>
-			</dict>
-			<key>selectTo</key>
-			<dict>
-				<key>column</key>
-				<integer>31</integer>
-				<key>line</key>
-				<integer>54</integer>
-			</dict>
-		</dict>
-		<key>FreeRTOS/Common/drivers/LuminaryMicro/uart.h</key>
-		<dict>
-			<key>caret</key>
-			<dict>
-				<key>column</key>
-				<integer>0</integer>
-				<key>line</key>
-				<integer>225</integer>
-			</dict>
-			<key>firstVisibleColumn</key>
-			<integer>0</integer>
-			<key>firstVisibleLine</key>
-			<integer>164</integer>
 		</dict>
 		<key>FreeRTOSConfig.h</key>
 		<dict>
@@ -286,14 +238,30 @@
 			<key>caret</key>
 			<dict>
 				<key>column</key>
-				<integer>17</integer>
+				<integer>7</integer>
 				<key>line</key>
-				<integer>88</integer>
+				<integer>541</integer>
 			</dict>
+			<key>columnSelection</key>
+			<false/>
 			<key>firstVisibleColumn</key>
 			<integer>0</integer>
 			<key>firstVisibleLine</key>
-			<integer>78</integer>
+			<integer>14</integer>
+			<key>selectFrom</key>
+			<dict>
+				<key>column</key>
+				<integer>1</integer>
+				<key>line</key>
+				<integer>541</integer>
+			</dict>
+			<key>selectTo</key>
+			<dict>
+				<key>column</key>
+				<integer>7</integer>
+				<key>line</key>
+				<integer>541</integer>
+			</dict>
 		</dict>
 		<key>LWIPStack.h</key>
 		<dict>
@@ -309,28 +277,14 @@
 			<key>firstVisibleLine</key>
 			<integer>0</integer>
 		</dict>
-		<key>Makefile</key>
+		<key>LuminaryMicro/driverlib/debug.h</key>
 		<dict>
 			<key>caret</key>
 			<dict>
 				<key>column</key>
-				<integer>8</integer>
+				<integer>14</integer>
 				<key>line</key>
-				<integer>16</integer>
-			</dict>
-			<key>firstVisibleColumn</key>
-			<integer>0</integer>
-			<key>firstVisibleLine</key>
-			<integer>4</integer>
-		</dict>
-		<key>console.c</key>
-		<dict>
-			<key>caret</key>
-			<dict>
-				<key>column</key>
-				<integer>30</integer>
-				<key>line</key>
-				<integer>46</integer>
+				<integer>45</integer>
 			</dict>
 			<key>columnSelection</key>
 			<false/>
@@ -341,16 +295,46 @@
 			<key>selectFrom</key>
 			<dict>
 				<key>column</key>
-				<integer>0</integer>
+				<integer>8</integer>
 				<key>line</key>
-				<integer>46</integer>
+				<integer>45</integer>
 			</dict>
 			<key>selectTo</key>
 			<dict>
 				<key>column</key>
-				<integer>30</integer>
+				<integer>14</integer>
 				<key>line</key>
-				<integer>46</integer>
+				<integer>45</integer>
+			</dict>
+		</dict>
+		<key>console.c</key>
+		<dict>
+			<key>caret</key>
+			<dict>
+				<key>column</key>
+				<integer>15</integer>
+				<key>line</key>
+				<integer>447</integer>
+			</dict>
+			<key>columnSelection</key>
+			<false/>
+			<key>firstVisibleColumn</key>
+			<integer>0</integer>
+			<key>firstVisibleLine</key>
+			<integer>422</integer>
+			<key>selectFrom</key>
+			<dict>
+				<key>column</key>
+				<integer>11</integer>
+				<key>line</key>
+				<integer>447</integer>
+			</dict>
+			<key>selectTo</key>
+			<dict>
+				<key>column</key>
+				<integer>21</integer>
+				<key>line</key>
+				<integer>447</integer>
 			</dict>
 		</dict>
 		<key>console.h</key>
@@ -444,28 +428,14 @@
 			<key>caret</key>
 			<dict>
 				<key>column</key>
-				<integer>26</integer>
+				<integer>0</integer>
 				<key>line</key>
-				<integer>192</integer>
+				<integer>343</integer>
 			</dict>
 			<key>firstVisibleColumn</key>
 			<integer>0</integer>
 			<key>firstVisibleLine</key>
-			<integer>149</integer>
-		</dict>
-		<key>rawuart.c</key>
-		<dict>
-			<key>caret</key>
-			<dict>
-				<key>column</key>
-				<integer>49</integer>
-				<key>line</key>
-				<integer>38</integer>
-			</dict>
-			<key>firstVisibleColumn</key>
-			<integer>0</integer>
-			<key>firstVisibleLine</key>
-			<integer>11</integer>
+			<integer>321</integer>
 		</dict>
 		<key>rawuart.h</key>
 		<dict>
@@ -511,71 +481,47 @@
 				<integer>229</integer>
 			</dict>
 		</dict>
-		<key>telnetd.c</key>
-		<dict>
-			<key>caret</key>
-			<dict>
-				<key>column</key>
-				<integer>10</integer>
-				<key>line</key>
-				<integer>128</integer>
-			</dict>
-			<key>firstVisibleColumn</key>
-			<integer>0</integer>
-			<key>firstVisibleLine</key>
-			<integer>107</integer>
-		</dict>
 		<key>uart.c</key>
 		<dict>
 			<key>caret</key>
 			<dict>
 				<key>column</key>
-				<integer>42</integer>
+				<integer>37</integer>
 				<key>line</key>
-				<integer>102</integer>
+				<integer>85</integer>
 			</dict>
 			<key>firstVisibleColumn</key>
 			<integer>0</integer>
 			<key>firstVisibleLine</key>
-			<integer>68</integer>
+			<integer>62</integer>
 		</dict>
-		<key>utils/ustdlib.c</key>
+		<key>utils/ustdlib.h</key>
 		<dict>
 			<key>caret</key>
 			<dict>
 				<key>column</key>
-				<integer>0</integer>
+				<integer>6</integer>
 				<key>line</key>
-				<integer>155</integer>
+				<integer>79</integer>
 			</dict>
 			<key>firstVisibleColumn</key>
 			<integer>0</integer>
 			<key>firstVisibleLine</key>
-			<integer>298</integer>
+			<integer>75</integer>
 		</dict>
 	</dict>
 	<key>openDocuments</key>
 	<array>
 		<string>uart.c</string>
-		<string>startup.c</string>
 		<string>lwiplib.h</string>
-		<string>Makefile</string>
-		<string>rawuart.c</string>
 		<string>LWIPStack.c</string>
+		<string>LuminaryMicro/driverlib/debug.h</string>
 		<string>ETHIsr.c</string>
-		<string>FreeRTOS/Common/drivers/LuminaryMicro/uart.h</string>
 		<string>lwipopts.h</string>
-		<string>rawuart.h</string>
-		<string>telnetd.c</string>
-		<string>lwip-1.3.2/doc/rawapi.txt</string>
 		<string>console.c</string>
+		<string>utils/ustdlib.h</string>
 		<string>main.c</string>
-		<string>FreeRTOS/Common/drivers/LuminaryMicro/interrupt.h</string>
 		<string>FreeRTOSConfig.h</string>
-		<string>LWIPStack.h</string>
-		<string>ETHIsr.h</string>
-		<string>utils/ustdlib.c</string>
-		<string>console.h</string>
 	</array>
 	<key>shellVariables</key>
 	<array>
@@ -599,6 +545,6 @@
 	<key>showFileHierarchyDrawer</key>
 	<false/>
 	<key>windowFrame</key>
-	<string>{{257, 121}, {1220, 1030}}</string>
+	<string>{{110, 128}, {1220, 1030}}</string>
 </dict>
 </plist>

@@ -25,9 +25,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 //! command line processor.
 //
 //*****************************************************************************
-#define ERROR_UNHANDLED		    -3
-#define ERROR_MEM			    -4
-#define CMDLINE_QUIT		    -5
 
 
 #define STATIC_IPADDR_LOW_ID		(0)
