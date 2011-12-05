@@ -42,7 +42,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "lwiplib.h"
 #include "lwip/netif.h"
 
-#include "utils/ustdlib.h"
+#include "utils/vstdlib.h"
 
 #include "LWIPStack.h"
 #include "ETHIsr.h"
