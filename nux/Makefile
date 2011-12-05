@@ -45,7 +45,7 @@ SOURCE=	main.c \
 		uart.c \
 		console.c \
 		softeeprom/softeeprom.c \
-		utils/ustdlib.c \
+		utils/vstdlib.c \
 		utils/cmdline.c \
 		ETHIsr.c \
 		LWIPStack.c \
