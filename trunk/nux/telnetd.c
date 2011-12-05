@@ -28,8 +28,15 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "lwip/stats.h"
 #include "lwip/tcp.h"
 #include "utils/cmdline.h"
-#include "utils/ustdlib.h"
+#include "utils/vstdlib.h"
 #include "console.h"
+
+
+#ifdef LWIP_DEBUG
+#define LWIP_DEBUGAPPS LWIPDebug
+#else
+#define LWIP_DEBUGAPPS while(0)((int (*)(char *, ...))0)
+#endif
 
 extern const portCHAR * const prompt;
 extern const portCHAR * const welcome;
@@ -87,7 +94,6 @@ void telnet_close(struct tcp_pcb *tpcb, struct telnet_state *es) {
 
 
 err_t telnet_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t err) {
-	char *cmd_buf;
 	char *data;
 	extern struct console_state *cmd_out;
 	int len,i,cmd_status;
@@ -106,21 +112,23 @@ err_t telnet_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t err) {
 		}
 		err = err;
 	} else if(es->state == ES_ACCEPTED) {
+		tcp_recved(tpcb, p->tot_len);
+
+		data = (char *)p->payload; // the first byte is a control byte for telnet sessions, we ignore it for now
+
 		es->state = ES_RECEIVED;
 		es->line[0] = 0;
-		cmd_buf = (char *)pvPortMalloc(TELNETD_CONF_LINELEN);
-		
 
 		err = tcp_write(tpcb, prompt, ustrlen(prompt), 0);
-
 		if(err == ERR_OK) {
 			tcp_output(tpcb);
 		}
-		vPortFree(cmd_buf);
 		if (p != NULL) {
 			pbuf_free(p);
 		}
 	} else  if (es->state == ES_RECEIVED) {
+		tcp_recved(tpcb, p->tot_len);
+
 		data = (char *)p->payload;
 		len=ustrlen(es->line);
 
@@ -136,7 +144,6 @@ err_t telnet_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t err) {
 		}
 		len=ustrlen(es->line);
 		es->line[len-2] = (char)0; // remove cr+lf
-		cmd_buf = (char *)pvPortMalloc(TELNETD_CONF_LINELEN);
 
 		cmd_out = (struct console_state *)pvPortMalloc(sizeof(struct console_state));
 		cmd_out->line=-1;
@@ -161,7 +168,6 @@ err_t telnet_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t err) {
 		if(err == ERR_OK) {
 			tcp_output(tpcb);
 		}
-		vPortFree(cmd_buf);
 		es->line[0] = (char)0;
 		
 		if (cmd_status == CMDLINE_QUIT) {
@@ -172,8 +178,6 @@ err_t telnet_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t err) {
 }
 
 err_t telnet_accept(void *arg, struct tcp_pcb *tpcb, err_t err) {
-	int len;
-	char *cmd_buf;
     struct telnet_state *es;
 	
 	LWIP_UNUSED_ARG(arg);
@@ -189,15 +193,10 @@ err_t telnet_accept(void *arg, struct tcp_pcb *tpcb, err_t err) {
 		tcp_err(tpcb, telnet_error);
 		tcp_recv(tpcb, telnet_recv);
 
-		cmd_buf = (char *)pvPortMalloc(TELNETD_CONF_LINELEN);
-
-		len = sprintf(cmd_buf, welcome);
-		err = tcp_write(tpcb, cmd_buf, len, 1);
+		err = tcp_write(tpcb, welcome, ustrlen(welcome), 0);
 		if(err == ERR_OK) {
 			tcp_output(tpcb);
 		}
-
-		vPortFree(cmd_buf);
 	} else {
 		err = ERR_MEM;
 	}
