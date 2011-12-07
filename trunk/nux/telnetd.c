@@ -92,11 +92,100 @@ void telnet_close(struct tcp_pcb *tpcb, struct telnet_state *es) {
 	tcp_close(tpcb);
 }
 
+#define STATE_NORMAL 0
+#define STATE_IAC    1
+#define STATE_WILL   2
+#define STATE_WONT   3
+#define STATE_DO     4
+#define STATE_DONT   5
+#define STATE_CLOSE  6
+
+#define TELNET_IAC   255
+#define TELNET_WILL  251
+#define TELNET_WONT  252
+#define TELNET_DO    253
+#define TELNET_DONT  254
+
+void read_iac(char * dataptr, int len,struct tcp_pcb *tpcb) {
+	char c;
+	u8_t state = STATE_NORMAL;
+	char line[3];
+	line[0] = TELNET_IAC;
+
+	 
+	while(len > 0 ) {
+		c = *dataptr;
+		++dataptr;
+		--len;
+		switch(state) {
+			case STATE_IAC:
+				if(c == TELNET_IAC) {
+					state = STATE_NORMAL;
+				} else {
+					switch(c) {
+						case TELNET_WILL:
+								state = STATE_WILL;
+								break;
+						case TELNET_WONT:
+								state = STATE_WONT;
+								break;
+						case TELNET_DO:
+								state = STATE_DO;
+								break;
+						case TELNET_DONT:
+								state = STATE_DONT;
+								break;
+						default:
+								state = STATE_NORMAL;
+								break;
+					}
+				}
+				break;
+			case STATE_WILL:
+				/* Reply with a DONT */
+				line[1] = TELNET_DONT;
+				line[2] = c;
+				tcp_write(tpcb, line,3,1);
+				state = STATE_NORMAL;
+				break;
+
+			case STATE_WONT:
+				/* Reply with a DONT */
+				line[1] = TELNET_DONT;
+				line[2] = c;
+				tcp_write(tpcb, line,3,1);
+				
+				state = STATE_NORMAL;
+				break;
+			case STATE_DO:
+				/* Reply with a WONT */
+				line[1] = TELNET_WONT;
+				line[2] = c;
+				tcp_write(tpcb, line,3,1);
+
+				state = STATE_NORMAL;
+				break;
+			case STATE_DONT:
+				/* Reply with a WONT */
+				line[1] = TELNET_WONT;
+				line[2] = c;
+				tcp_write(tpcb, line,3,1);
+				state = STATE_NORMAL;
+				break;
+			case STATE_NORMAL:
+				if(c == TELNET_IAC) {
+					state = STATE_IAC;
+				}
+				break;
+			}
+	}
+}
 
 err_t telnet_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t err) {
 	char *data;
+	char *dest;
 	extern struct console_state *cmd_out;
-	int len,i,cmd_status;
+	int cmd_status;
  	struct telnet_state *es;
 
 		
@@ -114,10 +203,10 @@ err_t telnet_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t err) {
 	} else if(es->state == ES_ACCEPTED) {
 		tcp_recved(tpcb, p->tot_len);
 
-		data = (char *)p->payload; // the first byte is a control byte for telnet sessions, we ignore it for now
-
+		data = (char *)p->payload;
+		read_iac(data, p->len,tpcb);
 		es->state = ES_RECEIVED;
-		es->line[0] = 0;
+		es->line[0] = '\0';
 
 		err = tcp_write(tpcb, prompt, ustrlen(prompt), 0);
 		if(err == ERR_OK) {
@@ -128,23 +217,21 @@ err_t telnet_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t err) {
 		}
 	} else  if (es->state == ES_RECEIVED) {
 		tcp_recved(tpcb, p->tot_len);
-
-		data = (char *)p->payload;
-		len=ustrlen(es->line);
-
-		for(i=0; i < p->len; i++) {
-			es->line[len+i] = *data;
-			data++;
+		if(p->tot_len < TELNETD_CONF_LINELEN) {
+			dest = &(es->line[0]);
+			do {
+				data = (char *)p->payload;
+				ustrncpy(dest,data,p->len);
+				dest += p->len;
+			} while((p = p->next));
+			*dest='\0';
 		}
-		es->line[len+p->len] = (char)0;
 		
 		pbuf_free(p);
-		if(ustrstr(es->line,"\n") == NULL) { // not finished command line
-			return ERR_OK;
+		if((dest=ustrstr(es->line,"\r\n")) != NULL) {
+			*dest='\0';
 		}
-		len=ustrlen(es->line);
-		es->line[len-2] = (char)0; // remove cr+lf
-
+		
 		cmd_out = (struct console_state *)pvPortMalloc(sizeof(struct console_state));
 		cmd_out->line=-1;
         //
