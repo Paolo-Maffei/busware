@@ -260,6 +260,51 @@ int cmd_static_ipaddr(int argc, char *argv[]) {
 	return(0);
 }
 
+int read_uartmode(int argc, char *argv[]) {
+    unsigned short uart_base,uart_len,uart_stop;
+	unsigned long ul_base,uart_speed,uart_config;
+	char uart_parity;
+	
+	if (!argc == 2) {
+        cmd_print("Wrong number of arguments\r\n");
+        return(ERROR_UNHANDLED);
+	}
+
+	uart_base = ustrtoul(argv[1],NULL,0);
+	switch(uart_base) {
+		case 1: {ul_base=UART1_BASE; break;}
+		case 2: {ul_base=UART2_BASE;break;}
+		default: {ul_base=UART0_BASE;}
+	}
+	
+	UARTConfigGetExpClk(ul_base,SysCtlClockGet(), &uart_speed, &uart_config);
+	
+	switch(uart_config & UART_CONFIG_WLEN_MASK) {
+		case UART_CONFIG_WLEN_8: { uart_len=8; break;}
+		case UART_CONFIG_WLEN_7: { uart_len=7; break;}
+		case UART_CONFIG_WLEN_6: { uart_len=6; break;}
+		case UART_CONFIG_WLEN_5: { uart_len=5; break;}
+		default: {uart_len=0;}
+    }
+	switch(uart_config & UART_CONFIG_STOP_MASK) {
+		case UART_CONFIG_STOP_ONE: { uart_stop=1; break;}
+		case UART_CONFIG_STOP_TWO: { uart_stop=2; break;}
+		default: {uart_stop=0;}
+	}
+	
+	switch(uart_config & UART_CONFIG_PAR_MASK) {
+		case UART_CONFIG_PAR_NONE: { uart_parity='N'; break;}
+		case UART_CONFIG_PAR_EVEN: { uart_parity='E'; break;}
+		case UART_CONFIG_PAR_ODD: { uart_parity='O'; break;}
+		case UART_CONFIG_PAR_ONE: { uart_parity='1'; break;}
+		case UART_CONFIG_PAR_ZERO: { uart_parity='0'; break;}
+		default: {uart_parity='X';}
+	}
+
+    // uart baud rate doesn't divide perfectly into whatever your system clock is set to
+	cmd_print("UART%d %d %d %c %d", uart_base, uart_speed,  uart_len , uart_parity, uart_stop );
+	return (0);
+}
 
 /*
  Implements the ip address command.
@@ -429,6 +474,7 @@ cmdline_entry g_sCmdTable[] = {
     { "ipaddr", cmd_static_ipaddr,  ": set/display static ipaddr address - Usage: ipaddr [addr mask gateway]" },
     { "ipmode", cmd_ipmode, ": set/display ip acquisition mode - Usage: ipmode [dhcp|static]" },
     { "uart",   cmd_uartmode, ": set/display uart - Usage: uart <id> <speed> <len> <stop> <parity>" },
+    { "ruart",  read_uartmode, ": display uart - Usage: ruart <id>" },
 
     { "quit",   cmd_quit,   "    : Quit console" },
 
