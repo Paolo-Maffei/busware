@@ -56,7 +56,7 @@ static const char * const g_pcHex = "0123456789abcdef";
 #define mainBASIC_TELNET_STACK_SIZE            ( configMINIMAL_STACK_SIZE * 2 )
 
 
-#define SIM_TASK_STACK_SIZE			( configMINIMAL_STACK_SIZE )
+#define SIM_TASK_STACK_SIZE			( configMINIMAL_STACK_SIZE + 100)
 
 /* Task priorities. */
 #define CHECK_TASK_PRIORITY				( tskIDLE_PRIORITY + 3 )
@@ -259,7 +259,6 @@ void prvSetupHardware( void ){
 
     lEEPROMRetStatus = SoftEEPROMRead(UART1_SPEED_HIGH_ID, &data, &found);
 	if(lEEPROMRetStatus == 0 && found) {
-		uart_speed = data << 8;
 	    SoftEEPROMRead(UART1_SPEED_LOW_ID, &data2, &found);
 		uart_speed = (data << 16 & 0xFFFF0000) | (data2 & 0x0000FFFF);
 	    SoftEEPROMRead(UART1_CONFIG_ID, &data, &found);
@@ -267,12 +266,10 @@ void prvSetupHardware( void ){
 		uart_speed=38400;
 		data = (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE | UART_CONFIG_PAR_NONE);
 	}
-
     UARTConfigSetExpClk(UART1_BASE, SysCtlClockGet(), uart_speed, data);
 
     IntEnable(INT_UART1);
 
-    //UARTIntEnable(UART0_BASE, UART_INT_RX | UART_INT_RT);
     UARTIntEnable(UART1_BASE, UART_INT_RX | UART_INT_RT);
 
 
@@ -299,7 +296,7 @@ void vApplicationTickHook( void ) {
 
 
 void vApplicationStackOverflowHook(xTaskHandle *pxTask, signed portCHAR *pcTaskName ) {
-	LWIPDebug("Stackoverflow %s",pcTaskName);
+	LWIPDebug("Stackoverflow task:%s",pcTaskName);
 }
 
 /* This function can't fragment the memory. The message gets parsed, formatted and print to UART0.
