@@ -116,15 +116,15 @@
  ---------- Statistics options ----------
 *****************************************************************************/
 #define LWIP_STATS                      1
-#define LWIP_STATS_DISPLAY              1
+#define LWIP_STATS_DISPLAY              0
 #define LINK_STATS                      1
 #define ETHARP_STATS                    (LWIP_ARP)
 #define IP_STATS                        1
 #define ICMP_STATS                      0
 #define UDP_STATS                       (LWIP_UDP)
 #define TCP_STATS                       (LWIP_TCP)
-#define MEM_STATS                       0
-#define MEMP_STATS                      0
+#define MEM_STATS                       1
+#define MEMP_STATS                      1
 #define SYS_STATS                       1
 
 /*****************************************************************************

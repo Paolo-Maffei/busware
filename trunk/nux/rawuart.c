@@ -42,7 +42,7 @@ void readuart_thread(void *pvParameters) {
 	struct netconn *conn, *newconn;
 	err_t err;
 	struct netbuf *buf;
-	portCHAR *data;
+	portCHAR *data, *inbuf;
 	u16_t len;
 	short i;
 	extern xQueueHandle xUART1Queue;
@@ -62,18 +62,22 @@ void readuart_thread(void *pvParameters) {
 		/* Grab new connection. */
 		newconn = netconn_accept(conn);
 		newconn->recv_timeout = 100; // wait 100ms for data from ethernet
+		data = (portCHAR *)pvPortMalloc(UART_QUEUE_SIZE);
 		
 		LWIP_DEBUGAPPS("rawuart connection accepted\r\n");
-		
+		len = uxQueueMessagesWaiting(xUART1Queue);
+		if( len > 0) { // remove any old data
+			for(i=0; i < len;i++) {
+				xQueueReceive( xUART1Queue, data, portMAX_DELAY);
+			}
+		}		
 		for(;;) {
 			len = uxQueueMessagesWaiting(xUART1Queue);
 			if( len > 0) {
-				data = (portCHAR *)pvPortMalloc(len);
 				for(i=0; i < len;i++) {
 					xQueueReceive( xUART1Queue, data+i, portMAX_DELAY);
 				}
 				err = netconn_write(newconn, data, len, NETCONN_COPY);
-				vPortFree(data);
 				if(err != ERR_OK) {
 					LWIP_DEBUGAPPS("rawuart netconn_write err: %d\r\n",err);
 
@@ -84,8 +88,8 @@ void readuart_thread(void *pvParameters) {
 			buf = netconn_recv(newconn);
 			if (buf != NULL) {
 				do {
-					netbuf_data(buf, (void *)&data, &len);
-					UARTSend(UART1_BASE,data,len);
+					netbuf_data(buf, (void *)&inbuf, &len);
+					UARTSend(UART1_BASE,inbuf,len);
 				} while (netbuf_next(buf) > 0); // read all data
 				netbuf_delete(buf);
 			} else if (netconn_err(newconn) != ERR_TIMEOUT) {
@@ -95,6 +99,7 @@ void readuart_thread(void *pvParameters) {
 		};
 		/* Close connection and discard connection identifier. */
 finish:
+		vPortFree(data);
 		netconn_close(newconn);
 		netconn_delete(newconn);
 		LWIP_DEBUGAPPS("rawuart connection closed\r\n");
