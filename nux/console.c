@@ -33,6 +33,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "console.h"
 
 
+#define SIM_TASK_STACK_SIZE                     ( configMINIMAL_STACK_SIZE )
+/* Task priorities. */
+#define CHECK_TASK_PRIORITY                             ( tskIDLE_PRIORITY + 3 )
 
 
 extern void UARTSend(unsigned long ulBase, const char *pucBuffer, unsigned short ulCount);
@@ -307,17 +310,13 @@ int read_uartmode(int argc, char *argv[]) {
 }
 
 /*
- Implements the ip address command.
-
- This function implements the "ipaddr" (ip address) set/display command.  
+ This function implements the uart set/display command.  
 
 */
 int cmd_uartmode(int argc, char *argv[]) {
-	tBoolean found;
     long lEEPROMRetStatus;
-    unsigned short uart_base,data,data2,uart_len,uart_stop;
-	unsigned long uart_speed;
-	char uart_parity;
+    unsigned short uart_base,data;
+	unsigned long  ul_base,uart_speed;
 	
 	if (!(argc == 2 || argc == 6)) {
         cmd_print("Wrong number of arguments\r\n");
@@ -325,47 +324,11 @@ int cmd_uartmode(int argc, char *argv[]) {
 	}
 
 	if (argc == 2) {
-		uart_base = ustrtoul(argv[1],NULL,0);
-		if(uart_base > 4) {
-			cmd_print("Wrong uart device: UART%d. Valid devices are UART0...UART4\r\n", uart_base);
-			return (ERROR_UNHANDLED);
-		}
-		SoftEEPROMRead(UART0_SPEED_HIGH_ID + uart_base, &data, &found);
-	    if (found) {
-			SoftEEPROMRead(UART0_SPEED_LOW_ID + uart_base, &data2, &found);
-			uart_speed =  (data << 16 & 0xFFFF0000) | (data2 & 0x0000FFFF);
-			
-			SoftEEPROMRead(UART0_CONFIG_ID + uart_base, &data, &found);
-			switch(data & UART_CONFIG_WLEN_MASK) {
-				case UART_CONFIG_WLEN_8: { uart_len=8; break;}
-				case UART_CONFIG_WLEN_7: { uart_len=7; break;}
-				case UART_CONFIG_WLEN_6: { uart_len=6; break;}
-				case UART_CONFIG_WLEN_5: { uart_len=5; break;}
-				default: {uart_len=0;}
-            }
-			switch(data & UART_CONFIG_STOP_MASK) {
-				case UART_CONFIG_STOP_ONE: { uart_stop=1; break;}
-				case UART_CONFIG_STOP_TWO: { uart_stop=2; break;}
-				default: {uart_stop=0;}
-			}
-			
-			switch(data & UART_CONFIG_PAR_MASK) {
-				case UART_CONFIG_PAR_NONE: { uart_parity='N'; break;}
-				case UART_CONFIG_PAR_EVEN: { uart_parity='E'; break;}
-				case UART_CONFIG_PAR_ODD: { uart_parity='O'; break;}
-				case UART_CONFIG_PAR_ONE: { uart_parity='1'; break;}
-				case UART_CONFIG_PAR_ZERO: { uart_parity='0'; break;}
-				default: {uart_parity='X';}
-			}
-			
-			cmd_print("UART%d %d %d %c %d", uart_base, uart_speed,  uart_len , uart_parity, uart_stop );
-		} else {
-			cmd_print("UART%d %d %d %c %d", uart_base, 115200, 8, 'N' , 1);
-		}
+		read_uartmode(argc,argv);
 	} else {
 		uart_base = ustrtoul(argv[1],NULL,0);
-		if(uart_base > 4) {
-			cmd_print("Wrong uart device: UART%d. Valid devices are UART0...UART4\r\n", uart_base);
+		if(uart_base > 2) {
+			cmd_print("Wrong uart device: UART%d. Valid devices are UART0...UART2\r\n", uart_base);
 			return (ERROR_UNHANDLED);
 		}
 		
@@ -394,14 +357,31 @@ int cmd_uartmode(int argc, char *argv[]) {
 			default: {cmd_print("Invalid parameter stop: %s", argv[5]); return (ERROR_UNHANDLED); }
 		}
 
-		lEEPROMRetStatus=SoftEEPROMWrite(UART0_SPEED_HIGH_ID + uart_base, uart_speed >> 16);
+		lEEPROMRetStatus=SoftEEPROMWrite(UART0_SPEED_HIGH_ID + uart_base, (unsigned short)(uart_speed >> 16));
 	    if(lEEPROMRetStatus != 0) {
 			cmd_print("\r\nAn error occurred during a soft EEPROM write operation");
 			return output_error(lEEPROMRetStatus);
 		}
-		SoftEEPROMWrite(UART0_SPEED_LOW_ID + uart_base, uart_speed );
 
-		SoftEEPROMWrite(UART0_CONFIG_ID + uart_base, data);
+		lEEPROMRetStatus=SoftEEPROMWrite(UART0_SPEED_LOW_ID + uart_base, (unsigned short)uart_speed );
+	    if(lEEPROMRetStatus != 0) {
+			cmd_print("\r\nAn error occurred during a soft EEPROM write operation");
+			return output_error(lEEPROMRetStatus);
+		}
+
+		lEEPROMRetStatus=SoftEEPROMWrite(UART0_CONFIG_ID + uart_base, data);
+	    if(lEEPROMRetStatus != 0) {
+			cmd_print("\r\nAn error occurred during a soft EEPROM write operation");
+			return output_error(lEEPROMRetStatus);
+		}
+		switch(uart_base) {
+			case 1: {ul_base=UART1_BASE; break;}
+			case 2: {ul_base=UART2_BASE;break;}
+			default: {ul_base=UART0_BASE;}
+		}
+
+	    UARTConfigSetExpClk(ul_base, SysCtlClockGet(), uart_speed, data);
+
 	}
 	return(0);
 }
@@ -450,6 +430,37 @@ int cmd_restart(int argc, char *argv[]) {
 	return(0);
 }
 
+void UARTSimTask( void *pvParameters ) {
+	unsigned int i;
+	unsigned short uart_base;
+	char inbuf[2];
+	char (*argv)[2];
+	unsigned long  ul_base;
+		
+	argv = (char (*)[2])pvParameters;
+	uart_base = ustrtoul(argv[1],NULL,0);
+	switch(uart_base) {
+		case 1: {ul_base=UART1_BASE; break;}
+		case 2: {ul_base=UART2_BASE;break;}
+		default: {ul_base=UART0_BASE;}
+	}
+	ul_base=UART1_BASE;
+    for( ;; )       {
+		for(i = 0; i < 11; ++i) {
+			usnprintf((char *)&inbuf,2,"%c",49+i);
+			UARTSend(ul_base,(char *)&inbuf,1);
+            vTaskDelay(500 / portTICK_RATE_MS);
+		}
+    }
+}
+
+int cmd_sim(int argc, char *argv[]) {
+    if (pdPASS !=xTaskCreate( UARTSimTask, ( signed portCHAR * ) "UART_SIM", SIM_TASK_STACK_SIZE, argv , CHECK_TASK_PRIORITY , NULL )){
+		cmd_print("Cant create simulator task\r\n");
+	}
+    return(0);
+}
+
 void print_uart(struct console_state *hs) {
 	int i;
 	for(i=0;i<=hs->line;i++) {
@@ -474,7 +485,7 @@ cmdline_entry g_sCmdTable[] = {
     { "ipaddr", cmd_static_ipaddr,  ": set/display static ipaddr address - Usage: ipaddr [addr mask gateway]" },
     { "ipmode", cmd_ipmode, ": set/display ip acquisition mode - Usage: ipmode [dhcp|static]" },
     { "uart",   cmd_uartmode, ": set/display uart - Usage: uart <id> <speed> <len> <stop> <parity>" },
-    { "ruart",  read_uartmode, ": display uart - Usage: ruart <id>" },
+    { "simuart", cmd_sim, ": writes data to uart 1" },
 
     { "quit",   cmd_quit,   "    : Quit console" },
 
@@ -520,4 +531,5 @@ void console( void *pvParameters ) {
 	
 	vPortFree(cmd_buf);
 }
+
 

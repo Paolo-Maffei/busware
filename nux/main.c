@@ -61,11 +61,6 @@ static const char * const g_pcHex = "0123456789abcdef";
 /* Task priorities. */
 #define CHECK_TASK_PRIORITY				( tskIDLE_PRIORITY + 3 )
 
-/* The maximum number of messages that can be waiting for process at any one
-time. */
-#define UART_QUEUE_SIZE						( 512 )
-
-
 #define SYSCTL_RCGC2_R          (*((volatile unsigned long *)0x400FE108))
 #define GPIO_PORTF_DIR_R        (*((volatile unsigned long *)0x40025400))
 #define GPIO_PORTF_DEN_R        (*((volatile unsigned long *)0x4002551C))
@@ -244,6 +239,13 @@ void prvSetupHardware( void ){
     GPIOPinTypeUART(GPIO_PORTA_BASE, GPIO_PIN_0 | GPIO_PIN_1);
 	GPIOPinTypeUART(GPIO_PORTD_BASE, GPIO_PIN_2 | GPIO_PIN_3);
 
+    //
+    // Check to see if an error occurred.
+    //
+    if(SoftEEPROMInit(0x1F000, 0x20000, 0x800) != 0)  {
+		LWIPDebug("SoftEEPROM initialisation failed.");
+    }
+
 
     lEEPROMRetStatus = SoftEEPROMRead(UART0_SPEED_HIGH_ID, &data, &found);
 	if(lEEPROMRetStatus == 0 && found) {
@@ -272,16 +274,6 @@ void prvSetupHardware( void ){
 
     UARTIntEnable(UART1_BASE, UART_INT_RX | UART_INT_RT);
 
-
-    
-    //
-    // Check to see if an error occurred.
-    //
-    if(SoftEEPROMInit(0x1F000, 0x20000, 0x800) != 0)  {
-		LWIPDebug("SoftEEPROM initialisation failed.");
-    }
-
-
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_WDOG0);
 
     IntEnable(INT_WATCHDOG); // Enable the watchdog interrupt.
@@ -290,9 +282,6 @@ void prvSetupHardware( void ){
     WatchdogEnable(WATCHDOG0_BASE);
 }
 /*-----------------------------------------------------------*/
-
-void vApplicationTickHook( void ) {
-}
 
 
 void vApplicationStackOverflowHook(xTaskHandle *pxTask, signed portCHAR *pcTaskName ) {
