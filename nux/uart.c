@@ -82,10 +82,6 @@ void UART1IntHandler(void) {
 
     ulStatus = UARTIntStatus(UART1_BASE, true);
 
-    //
-    // Clear the asserted interrupts.
-    //
-    UARTIntClear(UART1_BASE, ulStatus);
     if( ulStatus & (UART_INT_RX | UART_INT_RT) )     {
     	while (UARTCharsAvail(UART1_BASE)) {
 	    	cChar = UARTCharGetNonBlocking(UART1_BASE);
@@ -93,6 +89,10 @@ void UART1IntHandler(void) {
 		}
 		portEND_SWITCHING_ISR( xHigherPriorityTaskWoken );
 	}
+	//
+    // Clear the asserted interrupts.
+    //
+    UARTIntClear(UART1_BASE, ulStatus);
 }
 
 //*****************************************************************************
