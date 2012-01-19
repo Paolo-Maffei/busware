@@ -35,6 +35,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #else
 #define LWIP_DEBUGAPPS while(0)((int (*)(char *, ...))0)
 #endif
+#define DATA_BUF_SIZE						( 128 )
 
 extern void UARTSend(unsigned long ulBase, const char *pucBuffer, unsigned short ulCount);
 
@@ -62,7 +63,7 @@ void readuart_thread(void *pvParameters) {
 		/* Grab new connection. */
 		newconn = netconn_accept(conn);
 		newconn->recv_timeout = 100; // wait 100ms for data from ethernet
-		data = (portCHAR *)pvPortMalloc(UART_QUEUE_SIZE);
+		data = (portCHAR *)pvPortMalloc(DATA_BUF_SIZE);
 		
 		LWIP_DEBUGAPPS("rawuart connection accepted\r\n");
 		len = uxQueueMessagesWaiting(xUART1Queue);
@@ -74,6 +75,9 @@ void readuart_thread(void *pvParameters) {
 		for(;;) {
 			len = uxQueueMessagesWaiting(xUART1Queue);
 			if( len > 0) {
+				if (len > DATA_BUF_SIZE) {
+					len = DATA_BUF_SIZE;
+				}
 				for(i=0; i < len;i++) {
 					xQueueReceive( xUART1Queue, data+i, portMAX_DELAY);
 				}
@@ -83,6 +87,7 @@ void readuart_thread(void *pvParameters) {
 
 					goto finish;
 				}
+				vTaskDelay(400 / portTICK_RATE_MS);
 			}
 
 			buf = netconn_recv(newconn);

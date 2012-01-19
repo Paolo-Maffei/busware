@@ -77,7 +77,12 @@ xQueueHandle xUART1Queue;
 
 volatile unsigned short should_reset; // watchdog variable to perform a reboot
 
-/*-----------------------------------------------------------*/
+// global stats
+unsigned int stats_queue_full;
+unsigned int stats_uart1_rcv;
+unsigned int stats_uart1_err;
+
+
 
 /*
   required when compiling with MemMang/heap_3.c
@@ -160,6 +165,10 @@ void ethernetThread(void *pvParameters) {
  * various Luminary Micro EKs.
  *************************************************************************/
 int main( void ) {
+	stats_queue_full=0;
+	stats_uart1_rcv =0;
+	stats_uart1_err =0;
+	
 	prvSetupHardware();
 
 

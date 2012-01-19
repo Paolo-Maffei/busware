@@ -162,6 +162,18 @@ int cmd_clear(int argc, char *argv[]) {
 }
 
 
+
+int cmd_stats(int argc, char *argv[]) {
+	extern unsigned int stats_queue_full;
+	extern unsigned int stats_uart1_rcv;
+	extern unsigned int stats_uart1_err;
+
+
+	cmd_print("\r\n uart1 recv: %d error: %d queue full: %d", stats_uart1_rcv,stats_uart1_err,stats_queue_full);
+    return(0);
+}
+
+
 int cmd_ipmode(int argc, char *argv[]) {
 	tBoolean found;
     long lEEPROMRetStatus;
@@ -486,6 +498,7 @@ cmdline_entry g_sCmdTable[] = {
     { "ipmode", cmd_ipmode, ": set/display ip acquisition mode - Usage: ipmode [dhcp|static]" },
     { "uart",   cmd_uartmode, ": set/display uart - Usage: uart <id> <speed> <len> <stop> <parity>" },
     { "simuart", cmd_sim, ": writes data to uart 1" },
+    { "stats", cmd_stats, ": displays some statistics" },
 
     { "quit",   cmd_quit,   "    : Quit console" },
 

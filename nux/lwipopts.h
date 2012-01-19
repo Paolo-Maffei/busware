@@ -79,7 +79,7 @@
 *****************************************************************************/
 #define TCP_TTL                         (IP_DEFAULT_TTL)
 #define TCP_WND                         2048   // default is 2048
-#define TCP_MSS                        1500        // default is 128
+#define TCP_MSS                        128        // default is 128
 #define TCP_SND_BUF                     (4 * TCP_MSS)
                                                     // default is 256, was 6 *
 
@@ -87,7 +87,7 @@
  ---------- Pbuf options ----------
 *****************************************************************************/
 #define PBUF_LINK_HLEN                  16          // default is 14
-#define PBUF_POOL_BUFSIZE               256
+
                                                     // default is LWIP_MEM_ALIGN_SIZE(TCP_MSS+40+PBUF_LINK_HLEN)
 #define ETH_PAD_SIZE                    2           // default is 0
 
