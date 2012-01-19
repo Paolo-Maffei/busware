@@ -22,9 +22,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "queue.h"
 #include "semphr.h"
 
-
-#include "lwip/sys.h"
-#include "lwip/api.h"
+#include "lwip/tcp.h"
 
 #include "inc/hw_memmap.h"
 #include "inc/hw_types.h"
@@ -35,85 +33,188 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #else
 #define LWIP_DEBUGAPPS while(0)((int (*)(char *, ...))0)
 #endif
-#define DATA_BUF_SIZE						( 128 )
 
 extern void UARTSend(unsigned long ulBase, const char *pucBuffer, unsigned short ulCount);
+extern void read_iac(char * dataptr, int len,struct tcp_pcb *tpcb);
 
-void readuart_thread(void *pvParameters) {
-	struct netconn *conn, *newconn;
-	err_t err;
-	struct netbuf *buf;
-	portCHAR *data, *inbuf;
-	u16_t len;
-	short i;
-	extern xQueueHandle xUART1Queue;
+enum uart_states {
+  ES_NONE = 0,
+  ES_ACCEPTED,
+  ES_RECEIVED,
+  ES_CLOSING
+};
 
+#define DATA_BUF_SIZE						( 256 )
 
-	
-	/* Create a new connection identifier. */
-	conn = netconn_new(NETCONN_TCP);
+int instance = 0;
 
-	/* Bind connection to well known port number 7. */
-	netconn_bind(conn, NULL, 1234);
+struct uart_state {
+	u8_t state;
+	u16_t left;
+	char data[DATA_BUF_SIZE];
+};
 
-	/* Tell connection to go into listening mode. */
-	netconn_listen(conn);
+void uart_error(void *arg, err_t err) {
+	struct uart_state *es;
 
-	while (1) {
-		/* Grab new connection. */
-		newconn = netconn_accept(conn);
-		newconn->recv_timeout = 100; // wait 100ms for data from ethernet
-		data = (portCHAR *)pvPortMalloc(DATA_BUF_SIZE);
-		
-		LWIP_DEBUGAPPS("rawuart connection accepted\r\n");
-		len = uxQueueMessagesWaiting(xUART1Queue);
-		if( len > 0) { // remove any old data
-			for(i=0; i < len;i++) {
-				xQueueReceive( xUART1Queue, data, portMAX_DELAY);
-			}
-		}		
-		for(;;) {
-			len = uxQueueMessagesWaiting(xUART1Queue);
-			if( len > 0) {
-				if (len > DATA_BUF_SIZE) {
-					len = DATA_BUF_SIZE;
-				}
-				for(i=0; i < len;i++) {
-					xQueueReceive( xUART1Queue, data+i, portMAX_DELAY);
-				}
-				err = netconn_write(newconn, data, len, NETCONN_COPY);
-				if(err != ERR_OK) {
-					LWIP_DEBUGAPPS("rawuart netconn_write err: %d\r\n",err);
+	instance=0;
+	LWIP_UNUSED_ARG(err);
 
-					goto finish;
-				}
-				vTaskDelay(400 / portTICK_RATE_MS);
-			}
-
-			buf = netconn_recv(newconn);
-			if (buf != NULL) {
-				do {
-					netbuf_data(buf, (void *)&inbuf, &len);
-					UARTSend(UART1_BASE,inbuf,len);
-				} while (netbuf_next(buf) > 0); // read all data
-				netbuf_delete(buf);
-			} else if (netconn_err(newconn) != ERR_TIMEOUT) {
-				LWIP_DEBUGAPPS("rawuart netconn_recv err: %d\r\n",netconn_err(newconn));
-				goto finish;
-			}
-		};
-		/* Close connection and discard connection identifier. */
-finish:
-		vPortFree(data);
-		netconn_close(newconn);
-		netconn_delete(newconn);
-		LWIP_DEBUGAPPS("rawuart connection closed\r\n");
+	es = (struct uart_state *)arg;
+	if (es != NULL) {
+		vPortFree(es);
 	}
 }
 
+void uart_close(struct tcp_pcb *tpcb, struct uart_state *es) {
+	instance=0;
+	tcp_arg(tpcb, NULL);
+	tcp_sent(tpcb, NULL);
+	tcp_recv(tpcb, NULL);
+	tcp_err(tpcb, NULL);
+	tcp_poll(tpcb, NULL, 0);
+
+	if (es != NULL) {
+		vPortFree(es);
+	}
+
+	tcp_close(tpcb);
+}
+
+static void send_data(struct tcp_pcb *pcb, struct uart_state *es) {
+	err_t err;
+	u16_t len,i;
+	extern xQueueHandle xUART1Queue;
+	char *data;
+	
+	if(es->left > 0) {
+		data = es->data + DATA_BUF_SIZE - es->left;
+		len  = es->left;
+	} else {
+		len = uxQueueMessagesWaiting(xUART1Queue); // How much data can we send?
+		if(len == 0) {
+			return;
+		}
+		if(len > tcp_sndbuf(pcb)) {
+			len = tcp_sndbuf(pcb);
+		}
+	    if(len > (2*pcb->mss)) {
+			len = 2*pcb->mss;
+	    }
+		if( len > DATA_BUF_SIZE) {
+			len = DATA_BUF_SIZE;
+		}
+
+		for(i=0; i < len;i++) {
+			xQueueReceive( xUART1Queue, es->data+i, portMAX_DELAY);
+		}
+		es->left = len;
+		data = es->data;
+	}
+	
+    do {
+      err = tcp_write(pcb, data, len,  1);
+      if (err == ERR_MEM) {
+        len /= 2;
+      }
+    } while (err == ERR_MEM && len > 1);
+
+	es->left -= len;
+    if (err == ERR_OK) {
+    	tcp_output(pcb);
+	}
+}
+
+err_t uart_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t err) {
+ 	struct uart_state *es;
+	char *data;
+		
+  	LWIP_ASSERT("arg != NULL",arg != NULL);
+  	es = (struct uart_state *)arg;
+
+	if (p == NULL)   {
+		err = ERR_OK;
+	} else if(err != ERR_OK)  {
+	/* cleanup, for unkown reason */
+		if (p != NULL) {
+			pbuf_free(p);
+		}
+	} else if(es->state == ES_ACCEPTED) {
+		tcp_recved(tpcb, p->tot_len);
+
+		data = (char *)p->payload;
+		read_iac(data, p->len,tpcb);
+		es->state = ES_RECEIVED;
+		pbuf_free(p);
+	} else  if (es->state == ES_RECEIVED) {
+		tcp_recved(tpcb, p->tot_len);
+		do {
+			data = (char *)p->payload;
+			UARTSend(UART1_BASE,data,p->len);
+		} while((p = p->next));
+		
+		pbuf_free(p);
+	}
+	return err;
+}
+
+static err_t uart_poll(void *arg, struct tcp_pcb *pcb){
+	struct uart_state *hs;
+	
+	hs = arg;
+
+	if ((hs == NULL) && (pcb->state == ESTABLISHED)) {
+		tcp_abort(pcb);
+		return ERR_ABRT;
+	} else if(pcb->state == CLOSE_WAIT){
+		uart_close(pcb,hs);
+		return ERR_OK;
+	}
+
+	send_data(pcb, hs);
+	
+	return ERR_OK;
+}
+
+err_t uart_accept(void *arg, struct tcp_pcb *tpcb, err_t err) {
+    struct uart_state *es;
+	
+	LWIP_UNUSED_ARG(arg);
+
+/* commonly observed practive to call tcp_setprio(), why? */
+	tcp_setprio(tpcb, TCP_PRIO_MIN);
+
+	if(instance > 0) {
+		return ERR_BUF;
+	}
+	instance=1;
+	es = (struct uart_state *)pvPortMalloc(sizeof(struct uart_state));
+  	if (es != NULL)   {
+		es->state = ES_ACCEPTED;
+		es->left  = 0;
+		/* pass newly allocated es to our callbacks */
+	    tcp_arg(tpcb, es);
+		tcp_err(tpcb, uart_error);
+		tcp_recv(tpcb, uart_recv);
+	  	tcp_poll(tpcb, uart_poll, 1);
+	} else {
+		err = ERR_MEM;
+	}
+	
+	return err;  
+}
 
 void rawuart_init(void) {
-	if (pdPASS != xTaskCreate( readuart_thread, ( signed portCHAR * ) "READUART", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 3  , NULL )) {
-		LWIP_DEBUGAPPS("Cant create readuart!\r\n");
+	struct tcp_pcb *pcb;
+	
+	pcb = tcp_new();
+	if (pcb != NULL)   {
+		err_t err;
+
+		err = tcp_bind(pcb, IP_ADDR_ANY, 1234);
+		if (err == ERR_OK)   {
+			pcb = tcp_listen(pcb);
+			tcp_accept(pcb, uart_accept);
+		}
 	}
 }

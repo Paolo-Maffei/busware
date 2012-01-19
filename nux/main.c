@@ -81,7 +81,7 @@ volatile unsigned short should_reset; // watchdog variable to perform a reboot
 unsigned int stats_queue_full;
 unsigned int stats_uart1_rcv;
 unsigned int stats_uart1_err;
-
+unsigned int stats_tcp_state;
 
 
 /*
