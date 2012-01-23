@@ -73,7 +73,7 @@ void uart_close(struct tcp_pcb *tpcb, struct uart_state *es) {
 	tcp_recv(tpcb, NULL);
 	tcp_err(tpcb, NULL);
 	tcp_poll(tpcb, NULL, 0);
-
+	tcp_sent(tpcb, NULL);
 	if (es != NULL) {
 		vPortFree(es);
 	}
@@ -84,20 +84,15 @@ void uart_close(struct tcp_pcb *tpcb, struct uart_state *es) {
 static void send_data(struct tcp_pcb *pcb, struct uart_state *es) {
 	err_t err;
 	u16_t len,i;
-	extern xQueueHandle xUART1Queue;
 	char *data;
+	extern unsigned int stats_uart1_rcv;
 	
 	if(es->left > 0) {
 		data = es->data + DATA_BUF_SIZE - es->left;
 		len  = es->left;
 	} else {
-		len = uxQueueMessagesWaiting(xUART1Queue); // How much data can we send?
-		if(len == 0) {
-			return;
-		}
-		if(len > tcp_sndbuf(pcb)) {
-			len = tcp_sndbuf(pcb);
-		}
+		len = tcp_sndbuf(pcb);
+
 	    if(len > (2*pcb->mss)) {
 			len = 2*pcb->mss;
 	    }
@@ -105,9 +100,19 @@ static void send_data(struct tcp_pcb *pcb, struct uart_state *es) {
 			len = DATA_BUF_SIZE;
 		}
 
-		for(i=0; i < len;i++) {
-			xQueueReceive( xUART1Queue, es->data+i, portMAX_DELAY);
+		i=0;
+		data=es->data;
+		while (UARTCharsAvail(UART1_BASE) && (i<len)) {
+			*data++ = UARTCharGet(UART1_BASE);
+			stats_uart1_rcv++;
+			i++;
 		}
+		if(i == 0) {
+			return;
+		} else {
+			len = i;
+		}
+		
 		es->left = len;
 		data = es->data;
 	}
@@ -125,10 +130,33 @@ static void send_data(struct tcp_pcb *pcb, struct uart_state *es) {
 	}
 }
 
+static err_t uart_sent(void *arg, struct tcp_pcb *pcb, u16_t len) {
+  struct uart_state *hs;
+
+  LWIP_UNUSED_ARG(len);
+
+  if(!arg) {
+    return ERR_OK;
+  }
+
+  hs = arg;
+
+  /* Temporarily disable send notifications */
+  tcp_sent(pcb, NULL);
+
+  send_data(pcb, hs);
+
+  /* Reenable notifications. */
+  tcp_sent(pcb, uart_sent);
+
+  return ERR_OK;
+}
+
 err_t uart_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t err) {
  	struct uart_state *es;
 	char *data;
-		
+	extern unsigned int stats_uart1_sent;
+			
   	LWIP_ASSERT("arg != NULL",arg != NULL);
   	es = (struct uart_state *)arg;
 
@@ -146,11 +174,13 @@ err_t uart_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t err) {
 		read_iac(data, p->len,tpcb);
 		es->state = ES_RECEIVED;
 		pbuf_free(p);
+		tcp_output(tpcb);
 	} else  if (es->state == ES_RECEIVED) {
 		tcp_recved(tpcb, p->tot_len);
 		do {
 			data = (char *)p->payload;
 			UARTSend(UART1_BASE,data,p->len);
+			stats_uart1_sent += p->len;
 		} while((p = p->next));
 		
 		pbuf_free(p);
@@ -197,6 +227,7 @@ err_t uart_accept(void *arg, struct tcp_pcb *tpcb, err_t err) {
 		tcp_err(tpcb, uart_error);
 		tcp_recv(tpcb, uart_recv);
 	  	tcp_poll(tpcb, uart_poll, 1);
+		tcp_sent(tpcb, uart_sent);
 	} else {
 		err = ERR_MEM;
 	}

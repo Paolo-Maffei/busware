@@ -164,12 +164,11 @@ int cmd_clear(int argc, char *argv[]) {
 
 
 int cmd_stats(int argc, char *argv[]) {
-	extern unsigned int stats_queue_full;
 	extern unsigned int stats_uart1_rcv;
-	extern unsigned int stats_uart1_err;
+	extern unsigned int stats_uart1_sent;
 
 	
-	cmd_print("\r\n uart1 recv: %d error: %d queue full: %d", stats_uart1_rcv,stats_uart1_err,stats_queue_full);
+	cmd_print("\r\n uart1 recv: %d sent: %d", stats_uart1_rcv,stats_uart1_sent);
 
     return(0);
 }

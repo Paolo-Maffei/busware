@@ -36,7 +36,7 @@ extern void xPortPendSVHandler(void);
 extern void xPortSysTickHandler(void);
 extern void vPortSVCHandler( void );
 
-extern void UART1IntHandler(void);
+
 extern void WatchdogIntHandler(void);
 
 extern void ETH0IntHandler(void);
@@ -84,7 +84,7 @@ void (* const g_pfnVectors[])(void) =
     IntDefaultHandler,                      // GPIO Port D
     IntDefaultHandler,                      // GPIO Port E
     IntDefaultHandler,                      // UART0 Rx and Tx
-    UART1IntHandler,                        // UART1 Rx and Tx
+    IntDefaultHandler,                        // UART1 Rx and Tx
     IntDefaultHandler,                      // SSI Rx and Tx
     IntDefaultHandler,                      // I2C Master and Slave
     IntDefaultHandler,                      // PWM Fault

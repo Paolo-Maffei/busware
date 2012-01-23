@@ -72,16 +72,13 @@ static void prvSetupHardware( void ); // configure the hardware
 
 /*-----------------------------------------------------------*/
 
-/* The queue used to send messages from UART1 device. */
-xQueueHandle xUART1Queue;
-
 volatile unsigned short should_reset; // watchdog variable to perform a reboot
 
 // global stats
 unsigned int stats_queue_full;
 unsigned int stats_uart1_rcv;
-unsigned int stats_uart1_err;
-unsigned int stats_tcp_state;
+unsigned int stats_uart1_sent;
+
 
 
 /*
@@ -167,12 +164,9 @@ void ethernetThread(void *pvParameters) {
 int main( void ) {
 	stats_queue_full=0;
 	stats_uart1_rcv =0;
-	stats_uart1_err =0;
+	stats_uart1_sent =0;
 	
 	prvSetupHardware();
-
-
-	xUART1Queue = xQueueCreate( UART_QUEUE_SIZE, sizeof( portCHAR ) );
 
 	/* Create the uIP task if running on a processor that includes a MAC and
 	PHY. */
@@ -278,10 +272,6 @@ void prvSetupHardware( void ){
 		data = (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE | UART_CONFIG_PAR_NONE);
 	}
     UARTConfigSetExpClk(UART1_BASE, SysCtlClockGet(), uart_speed, data);
-
-    IntEnable(INT_UART1);
-
-    UARTIntEnable(UART1_BASE, UART_INT_RX | UART_INT_RT);
 
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_WDOG0);
 
