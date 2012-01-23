@@ -73,33 +73,6 @@ void UART0IntHandler(void) {
 
 }
 
-void UART1IntHandler(void) {
-    unsigned long ulStatus;
-	portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
-	portCHAR cChar;
-	/* The queue used to send messages from UART1 device. */
-	extern xQueueHandle xUART1Queue;
-	extern unsigned int stats_queue_full;
-	extern unsigned int stats_uart1_rcv;
-	extern unsigned int stats_uart1_err;
-
-    ulStatus = UARTIntStatus(UART1_BASE, true);
-    // Clear the asserted interrupts.
-    UARTIntClear(UART1_BASE, ulStatus);
-
-    if( ulStatus & (UART_INT_RX | UART_INT_RT) )     {
-    	while (UARTCharsAvail(UART1_BASE)) {
-	    	cChar = UARTCharGet(UART1_BASE);
-			stats_uart1_rcv++;
-			if(errQUEUE_FULL == xQueueSendFromISR( xUART1Queue, &cChar, &xHigherPriorityTaskWoken )) {
-				stats_queue_full++;
-			}
-		}
-		portEND_SWITCHING_ISR( xHigherPriorityTaskWoken );
-	} else if(ulStatus & (UART_INT_OE | UART_INT_BE | UART_INT_PE | UART_INT_FE)) {
-		stats_uart1_err++;
-	}
-}
 
 //*****************************************************************************
 //
