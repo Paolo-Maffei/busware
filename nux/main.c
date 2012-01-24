@@ -236,6 +236,10 @@ void prvSetupHardware( void ){
     //
     IntMasterEnable();
 
+    // set MOD_RES == Low
+    GPIOPinTypeGPIOOutput( GPIO_PORTA_BASE, GPIO_PIN_7 );
+    GPIOPinWrite(GPIO_PORTA_BASE, GPIO_PIN_7, 0xff);
+
     //
     // Set GPIO A0 and A1 as UART pins.
     //
@@ -268,7 +272,7 @@ void prvSetupHardware( void ){
 		uart_speed = (data << 16 & 0xFFFF0000) | (data2 & 0x0000FFFF);
 	    SoftEEPROMRead(UART1_CONFIG_ID, &data, &found);
 	} else {
-		uart_speed=38400;
+		uart_speed=115200;
 		data = (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE | UART_CONFIG_PAR_NONE);
 	}
     UARTConfigSetExpClk(UART1_BASE, SysCtlClockGet(), uart_speed, data);

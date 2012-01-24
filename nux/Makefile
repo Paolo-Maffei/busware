@@ -102,6 +102,10 @@ CFLAGS+=${patsubst %,-I%,${subst :, ,${IPATH}}}
 
 all: nux.bin
 	 
+
+flash: all
+	sflash -c /dev/ttyUSB1 -b 115200 -p 0x1000 -d nux.bin
+
 nux.bin : nux.axf
 	$(OBJCOPY) nux.axf -O binary nux.bin
 
