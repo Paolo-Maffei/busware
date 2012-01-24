@@ -48,6 +48,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "ETHIsr.h"
 #include "softeeprom.h"
 #include "console.h"
+#include "i2c_rw.h"
 
 /*-----------------------------------------------------------*/
 static const char * const g_pcHex = "0123456789abcdef";
@@ -283,6 +284,8 @@ void prvSetupHardware( void ){
     WatchdogReloadSet(WATCHDOG0_BASE, SysCtlClockGet());
     WatchdogResetEnable(WATCHDOG0_BASE);
     WatchdogEnable(WATCHDOG0_BASE);
+
+	I2C0_init();
 }
 /*-----------------------------------------------------------*/
 
