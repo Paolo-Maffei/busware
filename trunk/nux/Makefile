@@ -27,6 +27,7 @@ IPATH+=$(LWIP_SOURCE_DIR)/contrib/port/FreeRTOS/LM3S
 CFLAGS= -std=c99                                   \
 		-Wall                                      \
 		-D GCC_ARMCM3                              \
+		-D PART_LM3S611                            \
 		-D inline=                                 \
 		-mthumb                                    \
 		-mcpu=cortex-m3                            \
@@ -44,6 +45,7 @@ SOURCE=	main.c \
 		startup.c \
 		uart.c \
 		console.c \
+		i2c_rw.c \
 		softeeprom/softeeprom.c \
 		utils/vstdlib.c \
 		utils/cmdline.c \

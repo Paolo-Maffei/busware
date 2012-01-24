@@ -31,6 +31,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "utils/vstdlib.h"
 #include "softeeprom.h"
 #include "console.h"
+#include "i2c_rw.h"
 
 
 #define SIM_TASK_STACK_SIZE                     ( configMINIMAL_STACK_SIZE )
@@ -49,6 +50,8 @@ struct console_state *cmd_out;
 
 const portCHAR * const welcome = "\r\nNUX console V1.0\r\nType \'help\' for help.\r\n";
 const portCHAR * const prompt = "\r\nnux> ";
+
+#define SLAVE_ADDRESS_MODULE1 0xA0
 
 /* Helper function to print a line to a virtual screen
 */
@@ -173,6 +176,24 @@ int cmd_stats(int argc, char *argv[]) {
     return(0);
 }
 
+
+int cmd_test(int argc, char *argv[]) {
+	unsigned char data;
+	
+	if (argc < 2) {
+		data = I2C_read(SLAVE_ADDRESS_MODULE1, 1);
+		if(data == 0xFF) {
+			cmd_print("\r\nAn error occurred during a EEPROM read operation");
+		} else {
+			cmd_print("\r\nData: %X", data);
+		}
+		return(0);
+		
+	} else {
+		I2C_write(SLAVE_ADDRESS_MODULE1, *argv[1], 1);
+	}
+	return(0);
+}
 
 int cmd_ipmode(int argc, char *argv[]) {
 	tBoolean found;
@@ -490,8 +511,6 @@ void print_uart(struct console_state *hs) {
 //*****************************************************************************
 cmdline_entry g_sCmdTable[] = {
     { "help",   cmd_help,      " : Display list of commands" },
-    { "h",      cmd_help,   "    : alias for help" },
-    { "?",      cmd_help,   "    : alias for help" },
     { "clear",  cmd_clear,  "    : Reset soft EEPROM - Usage: clear" },
     { "restart",  cmd_restart,  "    : Restart software  - Usage: restart" },
     { "ipaddr", cmd_static_ipaddr,  ": set/display static ipaddr address - Usage: ipaddr [addr mask gateway]" },
@@ -499,7 +518,7 @@ cmdline_entry g_sCmdTable[] = {
     { "uart",   cmd_uartmode, ": set/display uart - Usage: uart <id> <speed> <len> <stop> <parity>" },
     { "simuart", cmd_sim, ": writes data to uart 1" },
     { "stats", cmd_stats, ": displays some statistics" },
-
+    { "test", cmd_test, ": set/display eeprom data - Usage: test <char>" },
     { "quit",   cmd_quit,   "    : Quit console" },
 
     { 0, 0, 0 }
