@@ -51,7 +51,7 @@ struct console_state *cmd_out;
 const portCHAR * const welcome = "\r\nNUX console V1.0\r\nType \'help\' for help.\r\n";
 const portCHAR * const prompt = "\r\nnux> ";
 
-#define SLAVE_ADDRESS_MODULE1 0xA0
+#define SLAVE_ADDRESS_MODULE1 0x50
 
 /* Helper function to print a line to a virtual screen
 */
