@@ -9,7 +9,7 @@
 
 
 void I2C0_init() {
-	//
+
     // The I2C0 peripheral must be enabled before use.
     //
     SysCtlPeripheralEnable(SYSCTL_PERIPH_I2C0);
@@ -113,4 +113,22 @@ void I2C_read(unsigned char slave_address, unsigned char *data, unsigned long le
     // get last byte
     ret = I2CMasterDataGet(I2C0_MASTER_BASE);
     *(data + i) = ret;
+}
+
+unsigned short I2C_exists(unsigned char slave_address) {
+	unsigned long ret = 0;
+	
+    I2CMasterSlaveAddrSet(I2C0_MASTER_BASE, slave_address, false);
+    // Place the address to be written in the data register.
+    I2CMasterDataPut(I2C0_MASTER_BASE, (unsigned char)0);
+    I2CMasterControl(I2C0_MASTER_BASE, I2C_MASTER_CMD_SINGLE_SEND);    
+    while(I2CMasterBusy(I2C0_MASTER_BASE)) {}    //wait
+
+    // Put the I2C master into receive mode.
+    I2CMasterSlaveAddrSet(I2C0_MASTER_BASE, slave_address, true);
+
+    I2CMasterControl(I2C0_MASTER_BASE, I2C_MASTER_CMD_SINGLE_RECEIVE);
+    while(I2CMasterBusy(I2C0_MASTER_BASE)) {}    //wait
+	ret=I2CMasterDataGet(I2C0_MASTER_BASE);
+	return (ret == 0xFF) ? 0 : 1;
 }

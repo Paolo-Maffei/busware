@@ -36,4 +36,11 @@ void I2C_write(unsigned char slave_address, unsigned char *data, unsigned long l
 //*****************************************************************************
 void I2C_read(unsigned char slave_address, unsigned char *data, unsigned long length, unsigned short reg_address);
 
+//*****************************************************************************
+// Checks existance of the Eeprom device.
+// \param slave_address is the Control byte shift right once. (0x50=0xA0>>1)  
+// \return true if eeprom device exists
+//*****************************************************************************
+unsigned short I2C_exists(unsigned char slave_address);
+
 #endif /* __I2C_RW_H__ */
