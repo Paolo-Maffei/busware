@@ -174,20 +174,24 @@ int cmd_stats(int argc, char *argv[]) {
 
 int cmd_test(int argc, char *argv[]) {
 	struct module_header *header;
-	unsigned short crc_check;
 	header = (struct module_header *)pvPortMalloc(sizeof(struct module_header));
 	
 	if (argc < 2) {
-		I2C_read(SLAVE_ADDRESS_MODULE1, (unsigned char *) header, sizeof(struct module_header), 0);
-		cmd_print("\r\nmodule magic: %X vendor: %X product: %X version: %X profile: %X crc: %X crc check: %X", header->magic, header->vendor, header->product, header->version, header->profile, header->crc);
+		cmd_print("\r\ni2c exists: %d",I2C_exists(SLAVE_ADDRESS_MODULE1));
 	} else {
-		header->magic   = 0x3A;
-		header->vendor  = 0x01;
-		header->product = 0x01;
-		header->version = 0x01;
-		header->profile = 0x22;
-		header->crc     = crcSlow((unsigned char *)header, sizeof(struct module_header)-sizeof(header->crc));
-		I2C_write(SLAVE_ADDRESS_MODULE1,(unsigned char *) header, sizeof(struct module_header), 0);
+		if(ustrncmp(argv[1],"write",5) == 0) {
+			header->magic   = 0x3A;
+			header->vendor  = 0x01;
+			header->product = 0x01;
+			header->version = 0x01;
+			header->profile = 0x22;
+			header->crc     = crcSlow((unsigned char *)header, sizeof(struct module_header)-sizeof(header->crc));
+			I2C_write(SLAVE_ADDRESS_MODULE1,(unsigned char *) header, sizeof(struct module_header), 0);
+		}
+
+		I2C_read(SLAVE_ADDRESS_MODULE1, (unsigned char *) header, sizeof(struct module_header), 0);
+		cmd_print("\r\ni2c module magic: %X vendor: %X product: %X version: %X profile: %X crc: %X", header->magic, header->vendor, header->product, header->version, header->profile, header->crc);
+
 	}
 
 	vPortFree(header);

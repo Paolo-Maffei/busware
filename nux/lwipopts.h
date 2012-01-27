@@ -152,7 +152,7 @@ extern void LWIPDebug(const char *pcString, ...);
 
 #define LWIP_PLATFORM_DIAG(x) {LWIPDebug x;}
 
-#define LWIP_DEBUG						0
+#define LWIP_DEBUG						1
 
 
 //#define LWIP_DBG_MIN_LEVEL              LWIP_DBG_LEVEL_OFF

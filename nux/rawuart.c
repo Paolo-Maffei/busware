@@ -200,7 +200,8 @@ static err_t uart_poll(void *arg, struct tcp_pcb *pcb){
 		return ERR_ABRT;
 	} else if(pcb->state == CLOSE_WAIT){
 		uart_close(pcb,hs);
-		return ERR_OK;
+		tcp_abort(pcb);
+		return ERR_ABRT;
 	}
 
 	send_data(pcb, hs);
