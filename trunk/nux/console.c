@@ -32,12 +32,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "softeeprom.h"
 #include "console.h"
 #include "i2c_rw.h"
-
-
-#define SIM_TASK_STACK_SIZE                     ( configMINIMAL_STACK_SIZE )
-/* Task priorities. */
-#define CHECK_TASK_PRIORITY                             ( tskIDLE_PRIORITY + 3 )
-
+#include "crc.h"
 
 extern void UARTSend(unsigned long ulBase, const char *pucBuffer, unsigned short ulCount);
 extern int UARTgets(unsigned long ulBase, char *pcBuf, unsigned long ulLen);
@@ -178,20 +173,24 @@ int cmd_stats(int argc, char *argv[]) {
 
 
 int cmd_test(int argc, char *argv[]) {
-	unsigned char data;
+	struct module_header *header;
+	unsigned short crc_check;
+	header = (struct module_header *)pvPortMalloc(sizeof(struct module_header));
 	
 	if (argc < 2) {
-		data = I2C_read(SLAVE_ADDRESS_MODULE1, 1);
-		if(data == 0xFF) {
-			cmd_print("\r\nAn error occurred during a EEPROM read operation");
-		} else {
-			cmd_print("\r\nData: %X", data);
-		}
-		return(0);
-		
+		I2C_read(SLAVE_ADDRESS_MODULE1, (unsigned char *) header, sizeof(struct module_header), 0);
+		cmd_print("\r\nmodule magic: %X vendor: %X product: %X version: %X profile: %X crc: %X crc check: %X", header->magic, header->vendor, header->product, header->version, header->profile, header->crc);
 	} else {
-		I2C_write(SLAVE_ADDRESS_MODULE1, *argv[1], 1);
+		header->magic   = 0x3A;
+		header->vendor  = 0x01;
+		header->product = 0x01;
+		header->version = 0x01;
+		header->profile = 0x22;
+		header->crc     = crcSlow((unsigned char *)header, sizeof(struct module_header)-sizeof(header->crc));
+		I2C_write(SLAVE_ADDRESS_MODULE1,(unsigned char *) header, sizeof(struct module_header), 0);
 	}
+
+	vPortFree(header);
 	return(0);
 }
 
@@ -307,6 +306,7 @@ int read_uartmode(int argc, char *argv[]) {
 	}
 
 	uart_base = ustrtoul(argv[1],NULL,0);
+	
 	switch(uart_base) {
 		case 1: {ul_base=UART1_BASE; break;}
 		case 2: {ul_base=UART2_BASE;break;}
@@ -463,36 +463,6 @@ int cmd_restart(int argc, char *argv[]) {
 	return(0);
 }
 
-void UARTSimTask( void *pvParameters ) {
-	unsigned int i;
-	unsigned short uart_base;
-	char inbuf[2];
-	char (*argv)[2];
-	unsigned long  ul_base;
-		
-	argv = (char (*)[2])pvParameters;
-	uart_base = ustrtoul(argv[1],NULL,0);
-	switch(uart_base) {
-		case 1: {ul_base=UART1_BASE; break;}
-		case 2: {ul_base=UART2_BASE;break;}
-		default: {ul_base=UART0_BASE;}
-	}
-	ul_base=UART1_BASE;
-    for( ;; )       {
-		for(i = 0; i < 11; ++i) {
-			usnprintf((char *)&inbuf,2,"%c",49+i);
-			UARTSend(ul_base,(char *)&inbuf,1);
-            vTaskDelay(500 / portTICK_RATE_MS);
-		}
-    }
-}
-
-int cmd_sim(int argc, char *argv[]) {
-    if (pdPASS !=xTaskCreate( UARTSimTask, ( signed portCHAR * ) "UART_SIM", SIM_TASK_STACK_SIZE, argv , CHECK_TASK_PRIORITY , NULL )){
-		cmd_print("Cant create simulator task\r\n");
-	}
-    return(0);
-}
 
 void print_uart(struct console_state *hs) {
 	int i;
@@ -516,7 +486,6 @@ cmdline_entry g_sCmdTable[] = {
     { "ipaddr", cmd_static_ipaddr,  ": set/display static ipaddr address - Usage: ipaddr [addr mask gateway]" },
     { "ipmode", cmd_ipmode, ": set/display ip acquisition mode - Usage: ipmode [dhcp|static]" },
     { "uart",   cmd_uartmode, ": set/display uart - Usage: uart <id> <speed> <len> <stop> <parity>" },
-    { "simuart", cmd_sim, ": writes data to uart 1" },
     { "stats", cmd_stats, ": displays some statistics" },
     { "test", cmd_test, ": set/display eeprom data - Usage: test <char>" },
     { "quit",   cmd_quit,   "    : Quit console" },

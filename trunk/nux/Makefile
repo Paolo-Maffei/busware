@@ -3,6 +3,8 @@
 #	
 #*/
 
+SFLASH=/Users/mueck/dev/StellarisWare/tools/sflash/sflash.exe
+TTY=/dev/tty.SLAB_USBtoUART
 RTOS_SOURCE_DIR=FreeRTOS/Source
 LWIP_SOURCE_DIR=lwip-1.3.2
 LUMINARY_DRIVER_DIR=LuminaryMicro
@@ -49,6 +51,7 @@ SOURCE=	main.c \
 		softeeprom/softeeprom.c \
 		utils/vstdlib.c \
 		utils/cmdline.c \
+		utils/crc.c     \
 		ETHIsr.c \
 		LWIPStack.c \
 		telnetd.c \
@@ -106,7 +109,7 @@ all: nux.bin
 	 
 
 flash: all
-	sflash -c /dev/ttyUSB1 -b 115200 -p 0x1000 -d nux.bin
+	$(SFLASH) -c $(TTY) -b 115200 -p 0x1000 -d nux.bin
 
 nux.bin : nux.axf
 	$(OBJCOPY) nux.axf -O binary nux.bin

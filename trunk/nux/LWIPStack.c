@@ -612,7 +612,7 @@ void LWIPServiceTaskInit(void *pvParameters) {
 	}
 
 	blinky(2);
-	rawuart_init();
+	rawuart_init(1234,UART1_BASE);
 	telnetd_init();
 }
 
