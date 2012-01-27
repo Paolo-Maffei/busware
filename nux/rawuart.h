@@ -19,6 +19,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #ifndef __RAWUART_H__
 #define __RAWUART_H__
 
-void rawuart_init(void);
+void rawuart_init(u16_t port, unsigned long ul_base);
 
 #endif /* __RAWUART_H__ */

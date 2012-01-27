@@ -49,28 +49,25 @@ void I2C0_init() {
 // \param data is the value to be written in the Eeprom
 // \param reg_address is the memory address which will be written at
 //*****************************************************************************
-void I2C_write(unsigned char slave_address, unsigned char data, unsigned short reg_address) {
-
+void I2C_write(unsigned char slave_address, unsigned char *data, unsigned long length, unsigned short reg_address) {
+	int i;
     ///////////////////////////////////////////////////////////////////
     // Start with the control byte (address) to the Eeprom.
     I2CMasterSlaveAddrSet(I2C0_MASTER_BASE, slave_address, false);
     
-    // Place the high address to be written in the data register.
+    // Place the address to be written in the data register.
     I2CMasterDataPut(I2C0_MASTER_BASE, (unsigned char)(reg_address));
-    
-    // Start sending, writing the high address byte.
     I2CMasterControl(I2C0_MASTER_BASE, I2C_MASTER_CMD_BURST_SEND_START);    
-    ///////////////////////////////////////////////////////////////////
-    
     while(I2CMasterBusy(I2C0_MASTER_BASE)) {}    //wait
 
-    ///////////////////////////////////////////////////////////////////
-    // Place the data to be written in the data register.
-    I2CMasterDataPut(I2C0_MASTER_BASE, data);
-    // Continue sending the data byte.
+	for(i=0; i < (length-1); i++) {
+	    I2CMasterDataPut(I2C0_MASTER_BASE, *(data+i));
+	    I2CMasterControl(I2C0_MASTER_BASE, I2C_MASTER_CMD_BURST_SEND_CONT);
+	    while(I2CMasterBusy(I2C0_MASTER_BASE)) {}    //wait
+	}
+	
+    I2CMasterDataPut(I2C0_MASTER_BASE, *(data+i));
     I2CMasterControl(I2C0_MASTER_BASE, I2C_MASTER_CMD_BURST_SEND_FINISH);
-    ///////////////////////////////////////////////////////////////////
-    
     while(I2CMasterBusy(I2C0_MASTER_BASE)) {}    //wait
 
     // here must be a delay to wait the write complete or to poll the ACK
@@ -81,35 +78,39 @@ void I2C_write(unsigned char slave_address, unsigned char data, unsigned short r
 // \param slave_address is the Control byte shift right once. (0x50=0xA0>>1)  
 // \param reg_address is the memory address to be read
 //*****************************************************************************
-unsigned char I2C_read(unsigned char slave_address, unsigned short reg_address) {
-    unsigned char DATA;
-    
+void I2C_read(unsigned char slave_address, unsigned char *data, unsigned long length, unsigned short reg_address){
+	int i;
+     unsigned long ret = 0;
     ///////////////////////////////////////////////////////////////////
     // Start with a write to set the address in the Eeprom.
     I2CMasterSlaveAddrSet(I2C0_MASTER_BASE, slave_address, false);
     
-    // Place the high address to be written in the data register.
+    // Place the address to be written in the data register.
     I2CMasterDataPut(I2C0_MASTER_BASE, (unsigned char)reg_address);
-    
-    // Perform a single send, writing the address as the only byte.
-    I2CMasterControl(I2C0_MASTER_BASE, I2C_MASTER_CMD_BURST_SEND_START);    
-    ///////////////////////////////////////////////////////////////////
-    
+    I2CMasterControl(I2C0_MASTER_BASE, I2C_MASTER_CMD_SINGLE_SEND);    
     while(I2CMasterBusy(I2C0_MASTER_BASE)) {}    //wait
 
-    ///////////////////////////////////////////////////////////////////
     // Put the I2C master into receive mode.
     I2CMasterSlaveAddrSet(I2C0_MASTER_BASE, slave_address, true);
-    // Perform a single byte read.
-    I2CMasterControl(I2C0_MASTER_BASE, I2C_MASTER_CMD_SINGLE_RECEIVE);
-    ///////////////////////////////////////////////////////////////////
-    
+
+	i=0;
+    I2CMasterControl(I2C0_MASTER_BASE, I2C_MASTER_CMD_BURST_RECEIVE_START);
     while(I2CMasterBusy(I2C0_MASTER_BASE)) {}    //wait
+    ret = I2CMasterDataGet(I2C0_MASTER_BASE);
+	*data=ret;
+	
+	for(i = 1; i < (length-1); i++)	{
+		I2CMasterControl(I2C0_MASTER_BASE, I2C_MASTER_CMD_BURST_RECEIVE_CONT);
+        while(I2CMasterBusy(I2C0_MASTER_BASE)){}
+        // get further bytes
+        ret = I2CMasterDataGet(I2C0_MASTER_BASE);
+        *(data + i) = ret;
+	}
 
-    ///////////////////////////////////////////////////////////////////
-    // Read the received character.
-    DATA = I2CMasterDataGet(I2C0_MASTER_BASE);
-    ///////////////////////////////////////////////////////////////////
-
-    return DATA;
+    // finish reading sequence
+    I2CMasterControl(I2C0_MASTER_BASE, I2C_MASTER_CMD_BURST_RECEIVE_FINISH);
+    while(I2CMasterBusy(I2C0_MASTER_BASE)){}
+    // get last byte
+    ret = I2CMasterDataGet(I2C0_MASTER_BASE);
+    *(data + i) = ret;
 }

@@ -24,7 +24,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include "lwip/tcp.h"
 
-#include "inc/hw_memmap.h"
+
 #include "inc/hw_types.h"
 #include "driverlib/uart.h"
 
@@ -51,6 +51,7 @@ int instance = 0;
 struct uart_state {
 	u8_t state;
 	u16_t left;
+	unsigned long base;
 	char data[DATA_BUF_SIZE];
 };
 
@@ -79,6 +80,7 @@ void uart_close(struct tcp_pcb *tpcb, struct uart_state *es) {
 	}
 
 	tcp_close(tpcb);
+	LWIP_DEBUGAPPS("Connection closed.\r\n");
 }
 
 static void send_data(struct tcp_pcb *pcb, struct uart_state *es) {
@@ -102,8 +104,8 @@ static void send_data(struct tcp_pcb *pcb, struct uart_state *es) {
 
 		i=0;
 		data=es->data;
-		while (UARTCharsAvail(UART1_BASE) && (i<len)) {
-			*data++ = UARTCharGet(UART1_BASE);
+		while (UARTCharsAvail(es->base) && (i<len)) {
+			*data++ = UARTCharGet(es->base);
 			stats_uart1_rcv++;
 			i++;
 		}
@@ -179,7 +181,7 @@ err_t uart_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t err) {
 		tcp_recved(tpcb, p->tot_len);
 		do {
 			data = (char *)p->payload;
-			UARTSend(UART1_BASE,data,p->len);
+			UARTSend(es->base,data,p->len);
 			stats_uart1_sent += p->len;
 		} while((p = p->next));
 		
@@ -208,9 +210,10 @@ static err_t uart_poll(void *arg, struct tcp_pcb *pcb){
 
 err_t uart_accept(void *arg, struct tcp_pcb *tpcb, err_t err) {
     struct uart_state *es;
+	unsigned long base;
 	
 	LWIP_UNUSED_ARG(arg);
-
+	base = *((unsigned long *)arg);
 /* commonly observed practive to call tcp_setprio(), why? */
 	tcp_setprio(tpcb, TCP_PRIO_MIN);
 
@@ -222,30 +225,41 @@ err_t uart_accept(void *arg, struct tcp_pcb *tpcb, err_t err) {
   	if (es != NULL)   {
 		es->state = ES_ACCEPTED;
 		es->left  = 0;
+		es->base = base;
 		/* pass newly allocated es to our callbacks */
 	    tcp_arg(tpcb, es);
 		tcp_err(tpcb, uart_error);
 		tcp_recv(tpcb, uart_recv);
 	  	tcp_poll(tpcb, uart_poll, 1);
 		tcp_sent(tpcb, uart_sent);
+		LWIP_DEBUGAPPS("Connection accepted.");
 	} else {
 		err = ERR_MEM;
+		LWIP_DEBUGAPPS("Connection error. Not enough memory.\r\n");
 	}
 	
 	return err;  
 }
 
-void rawuart_init(void) {
+void rawuart_init(u16_t port, unsigned long base) {
 	struct tcp_pcb *pcb;
-	
+	unsigned long *arg;
+
 	pcb = tcp_new();
 	if (pcb != NULL)   {
 		err_t err;
 
-		err = tcp_bind(pcb, IP_ADDR_ANY, 1234);
+		err = tcp_bind(pcb, IP_ADDR_ANY, port);
 		if (err == ERR_OK)   {
 			pcb = tcp_listen(pcb);
 			tcp_accept(pcb, uart_accept);
+			arg = (unsigned long *)pvPortMalloc(sizeof(unsigned long));
+			if (arg != NULL)   {
+				*arg = base;
+				tcp_arg(pcb, arg);
+			} else {
+				LWIP_DEBUGAPPS("Not enough memory.\r\n");
+			}
 		}
 	}
 }
