@@ -3,20 +3,24 @@
 
 void I2C0_init();
 
-struct module_header {
+struct module_info {
 	unsigned short magic;
 	unsigned short vendor;
 	unsigned short product;
 	unsigned short version;
 	unsigned short profile;
 	unsigned short crc;
-};
+	unsigned short baud;
+	unsigned short config;
+} __attribute__((__packed__));
 
-struct profile_uart {
+struct uart_info {
 	unsigned short magic;
 	unsigned long baud;
 	unsigned short config;
-};
+} __attribute__((__packed__));
+
+
 
 //*****************************************************************************
 // Non Interupt driven Write to the Eeprom.
