@@ -47,6 +47,7 @@ const portCHAR * const welcome = "\r\nNUX console V1.0\r\nType \'help\' for help
 const portCHAR * const prompt = "\r\nnux> ";
 
 #define SLAVE_ADDRESS_MODULE1 0x50
+#define SLAVE_ADDRESS_MODULE2 0x51
 
 /* Helper function to print a line to a virtual screen
 */
@@ -173,8 +174,11 @@ int cmd_stats(int argc, char *argv[]) {
 
 
 int cmd_test(int argc, char *argv[]) {
-	struct module_header *header;
-	header = (struct module_header *)pvPortMalloc(sizeof(struct module_header));
+	struct module_info *header;
+	struct uart_info *profile;
+
+	
+	header = (struct module_info *)pvPortMalloc(sizeof(struct module_info));
 	
 	if (argc < 2) {
 		cmd_print("\r\ni2c exists: %d",I2C_exists(SLAVE_ADDRESS_MODULE1));
@@ -185,12 +189,25 @@ int cmd_test(int argc, char *argv[]) {
 			header->product = 0x01;
 			header->version = 0x01;
 			header->profile = 0x22;
-			header->crc     = crcSlow((unsigned char *)header, sizeof(struct module_header)-sizeof(header->crc));
-			I2C_write(SLAVE_ADDRESS_MODULE1,(unsigned char *) header, sizeof(struct module_header), 0);
+			header->crc     = crcSlow((unsigned char *)header, sizeof(struct module_info)-sizeof(header->crc));
+			header->baud    = 0x11;
+			header->config    = 0x12;
+			
+			I2C_write(SLAVE_ADDRESS_MODULE1,(unsigned char *) header, sizeof(struct module_info), 0);
+			vTaskDelay(100 / portTICK_RATE_MS); // there must be a delay after write or avoid I2C_read()
+			cmd_print("\r\nweg hier");
 		}
-
-		I2C_read(SLAVE_ADDRESS_MODULE1, (unsigned char *) header, sizeof(struct module_header), 0);
+		I2C_read(SLAVE_ADDRESS_MODULE1, (unsigned char *) header, sizeof(struct module_info), 0);
 		cmd_print("\r\ni2c module magic: %X vendor: %X product: %X version: %X profile: %X crc: %X", header->magic, header->vendor, header->product, header->version, header->profile, header->crc);
+
+		if(header->profile == 0x22) {
+			profile = (struct uart_info *)pvPortMalloc(sizeof(struct uart_info));
+			
+			I2C_read(SLAVE_ADDRESS_MODULE1, (unsigned char *) profile, sizeof(struct uart_info), sizeof(struct module_info));
+			
+			cmd_print("\r\nuart 1 speed: %d config: %X", profile->baud, profile->config);
+			vPortFree(profile);
+		}
 
 	}
 
@@ -351,6 +368,7 @@ int read_uartmode(int argc, char *argv[]) {
 
 */
 int cmd_uartmode(int argc, char *argv[]) {
+	struct uart_info *profile;
     long lEEPROMRetStatus;
     unsigned short uart_base,data;
 	unsigned long  ul_base,uart_speed;
@@ -393,24 +411,47 @@ int cmd_uartmode(int argc, char *argv[]) {
 
 			default: {cmd_print("Invalid parameter stop: %s", argv[5]); return (ERROR_UNHANDLED); }
 		}
+		
+		if(uart_base == 0) {
+			lEEPROMRetStatus=SoftEEPROMWrite(UART0_SPEED_HIGH_ID + uart_base, (unsigned short)(uart_speed >> 16));
+		    if(lEEPROMRetStatus != 0) {
+				cmd_print("\r\nAn error occurred during a soft EEPROM write operation");
+				return output_error(lEEPROMRetStatus);
+			}
 
-		lEEPROMRetStatus=SoftEEPROMWrite(UART0_SPEED_HIGH_ID + uart_base, (unsigned short)(uart_speed >> 16));
-	    if(lEEPROMRetStatus != 0) {
-			cmd_print("\r\nAn error occurred during a soft EEPROM write operation");
-			return output_error(lEEPROMRetStatus);
-		}
+			lEEPROMRetStatus=SoftEEPROMWrite(UART0_SPEED_LOW_ID + uart_base, (unsigned short)uart_speed );
+		    if(lEEPROMRetStatus != 0) {
+				cmd_print("\r\nAn error occurred during a soft EEPROM write operation");
+				return output_error(lEEPROMRetStatus);
+			}
 
-		lEEPROMRetStatus=SoftEEPROMWrite(UART0_SPEED_LOW_ID + uart_base, (unsigned short)uart_speed );
-	    if(lEEPROMRetStatus != 0) {
-			cmd_print("\r\nAn error occurred during a soft EEPROM write operation");
-			return output_error(lEEPROMRetStatus);
-		}
+			lEEPROMRetStatus=SoftEEPROMWrite(UART0_CONFIG_ID + uart_base, data);
+		    if(lEEPROMRetStatus != 0) {
+				cmd_print("\r\nAn error occurred during a soft EEPROM write operation");
+				return output_error(lEEPROMRetStatus);
+			}
+		} else {
+			switch(uart_base) {
+				case 1: { 
+					if(I2C_exists(SLAVE_ADDRESS_MODULE1)) {
+						profile = (struct uart_info *)pvPortMalloc(sizeof(struct uart_info));
 
-		lEEPROMRetStatus=SoftEEPROMWrite(UART0_CONFIG_ID + uart_base, data);
-	    if(lEEPROMRetStatus != 0) {
-			cmd_print("\r\nAn error occurred during a soft EEPROM write operation");
-			return output_error(lEEPROMRetStatus);
+						profile->baud   = uart_speed;
+						profile->config = data;
+						I2C_write(SLAVE_ADDRESS_MODULE1,(unsigned char *) profile, sizeof(struct uart_info), sizeof(struct module_info)); // write after header
+						cmd_print("\r\nuart 1 speed: %d config: %X", profile->baud, profile->config);
+						vPortFree(profile);
+					} else {
+						cmd_print("\r\n Module %d doesn't exists.",uart_base);
+						return 0;
+					}
+					break;}
+				case 2: {ul_base=UART2_BASE;break;}
+				default: {ul_base=UART0_BASE;}
+			}
+			
 		}
+		
 		switch(uart_base) {
 			case 1: {ul_base=UART1_BASE; break;}
 			case 2: {ul_base=UART2_BASE;break;}
