@@ -50,6 +50,7 @@
 
 #include "telnetd.h"
 #include "rawuart.h"
+#include "modules.h"
 
 #include "ETHIsr.h"
 #include "LWIPStack.h"
@@ -532,7 +533,9 @@ void LWIPServiceTaskInit(void *pvParameters) {
 	struct ip_addr ip_addr;
 	struct ip_addr net_mask;
 	struct ip_addr gw_addr;
-
+	extern unsigned int module_uart_avail;
+	extern unsigned int module_uart_port[4];
+	
 	LWIP_ASSERT("pvParameters != NULL", (pvParameters != NULL));
 
 	IP_CONFIG * ipCfg = (IP_CONFIG *)pvParameters;
@@ -612,7 +615,9 @@ void LWIPServiceTaskInit(void *pvParameters) {
 	}
 
 	blinky(2);
-	rawuart_init(1234,UART1_BASE);
+	if((module_uart_avail & MODULE1) != 0) {
+		rawuart_init(module_uart_port[0],UART1_BASE);
+	}
 	telnetd_init();
 }
 

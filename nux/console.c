@@ -46,8 +46,6 @@ struct console_state *cmd_out;
 const portCHAR * const welcome = "\r\nNUX console V1.0\r\nType \'help\' for help.\r\n";
 const portCHAR * const prompt = "\r\nnux> ";
 
-#define SLAVE_ADDRESS_MODULE1 0x50
-#define SLAVE_ADDRESS_MODULE2 0x51
 
 /* Helper function to print a line to a virtual screen
 */
@@ -165,8 +163,10 @@ int cmd_clear(int argc, char *argv[]) {
 int cmd_stats(int argc, char *argv[]) {
 	extern unsigned int stats_uart1_rcv;
 	extern unsigned int stats_uart1_sent;
+	extern unsigned int module_uart_avail;
+	extern unsigned int stats_crc_error;
 
-	
+	cmd_print("\r\n module avail: %X crc error: %X", module_uart_avail,stats_crc_error);
 	cmd_print("\r\n uart1 recv: %d sent: %d", stats_uart1_rcv,stats_uart1_sent);
 
     return(0);
@@ -189,62 +189,28 @@ int cmd_test(int argc, char *argv[]) {
 			header->product = 0x01;
 			header->version = 0x01;
 			header->profile = 0x22;
+			header->modres  = 0xFF;
+			header->dummy2  = 0;
 			header->crc     = crcSlow((unsigned char *)header, sizeof(struct module_info)-sizeof(header->crc));
-			header->baud    = 0x11;
-			header->config    = 0x12;
 			
 			I2C_write(SLAVE_ADDRESS_MODULE1,(unsigned char *) header, sizeof(struct module_info), 0);
 			vTaskDelay(100 / portTICK_RATE_MS); // there must be a delay after write or avoid I2C_read()
-			cmd_print("\r\nweg hier");
 		}
 		I2C_read(SLAVE_ADDRESS_MODULE1, (unsigned char *) header, sizeof(struct module_info), 0);
-		cmd_print("\r\ni2c module magic: %X vendor: %X product: %X version: %X profile: %X crc: %X", header->magic, header->vendor, header->product, header->version, header->profile, header->crc);
+		cmd_print("\r\ni2c module magic: %X vendor: %X product: %X version: %X profile: %X modres: %X", header->magic, header->vendor, header->product, header->version, header->profile, header->modres);
 
 		if(header->profile == 0x22) {
 			profile = (struct uart_info *)pvPortMalloc(sizeof(struct uart_info));
 			
 			I2C_read(SLAVE_ADDRESS_MODULE1, (unsigned char *) profile, sizeof(struct uart_info), sizeof(struct module_info));
 			
-			cmd_print("\r\nuart 1 speed: %d config: %X", profile->baud, profile->config);
+			cmd_print("\r\nuart 1 speed: %d config: %X port: %d", profile->baud, profile->config, profile->port);
 			vPortFree(profile);
 		}
 
 	}
 
 	vPortFree(header);
-	return(0);
-}
-
-int cmd_ipmode(int argc, char *argv[]) {
-	tBoolean found;
-    long lEEPROMRetStatus;
-    unsigned short usdata;
-
-	if (argc < 2) {
-	    lEEPROMRetStatus = SoftEEPROMRead(IPMODE_ID, &usdata, &found);
-		
-	    if(lEEPROMRetStatus != 0) {
-	        cmd_print("\rAn error occurred during a soft EEPROM read operation");
-	        return output_error(lEEPROMRetStatus);
-	    }
-		usdata = found ? usdata : 1;
-		cmd_print("ip mode : %s", usdata == 1 ? "dhcp" : "static");
-		
-		return(0);
-		
-	} else {
-		if(ustrncmp(argv[1],"dhcp",4) == 0)	{
-			usdata=1;
-		} else {
-			usdata=0;
-		}
-	    lEEPROMRetStatus = SoftEEPROMWrite(IPMODE_ID, usdata);
-
-	    if(lEEPROMRetStatus != 0) {
-	        cmd_print("\r\nAn error occurred during a soft EEPROM write operation");
-	        return output_error(lEEPROMRetStatus);
-	    }
-	}
 	return(0);
 }
 
@@ -268,7 +234,7 @@ int cmd_static_ipaddr(int argc, char *argv[]) {
 	    }
 		if(found) {
 		    lEEPROMRetStatus = SoftEEPROMRead(STATIC_IPADDR_HIGH_ID, &usdata2, &found);
-	        cmd_print("ip addr: %d.%d.%d.%d", ((usdata2 >> 8) & 0xff),((usdata2 >> 0) & 0xff),((usdata >> 8) & 0xff),((usdata >> 0) & 0xff));
+	        cmd_print("\r\nip addr: %d.%d.%d.%d", ((usdata2 >> 8) & 0xff),((usdata2 >> 0) & 0xff),((usdata >> 8) & 0xff),((usdata >> 0) & 0xff));
 
 		    lEEPROMRetStatus = SoftEEPROMRead(STATIC_IPMASK_LOW_ID, &usdata, &found);
 		    lEEPROMRetStatus = SoftEEPROMRead(STATIC_IPMASK_HIGH_ID, &usdata2, &found);
@@ -280,8 +246,8 @@ int cmd_static_ipaddr(int argc, char *argv[]) {
 			return(0);
 		}
 		cmd_print("\r\nNo static ip address stored.");
-	} else if (argc == 4){
-	    usdata2 = atoi(strtok(argv[1],".")) << 8;
+	} else if (argc == 5){
+	    usdata2 = atoi(strtok(argv[2],".")) << 8;
 	    usdata2 |= atoi(strtok(NULL,"."));
 	    lEEPROMRetStatus = SoftEEPROMWrite(STATIC_IPADDR_HIGH_ID, usdata2);
 
@@ -293,7 +259,7 @@ int cmd_static_ipaddr(int argc, char *argv[]) {
 	    usdata2 |= atoi(strtok(NULL,""));
 	    SoftEEPROMWrite(STATIC_IPADDR_LOW_ID, usdata2);
 
-	    usdata2 = atoi(strtok(argv[2],".")) << 8;
+	    usdata2 = atoi(strtok(argv[3],".")) << 8;
 	    usdata2 |= atoi(strtok(NULL,"."));
 	    SoftEEPROMWrite(STATIC_IPMASK_HIGH_ID, usdata2);
 
@@ -301,7 +267,7 @@ int cmd_static_ipaddr(int argc, char *argv[]) {
 	    usdata2 |= atoi(strtok(NULL,""));
 	    SoftEEPROMWrite(STATIC_IPMASK_LOW_ID, usdata2);
 
-	    usdata2 = atoi(strtok(argv[3],".")) << 8;
+	    usdata2 = atoi(strtok(argv[4],".")) << 8;
 	    usdata2 |= atoi(strtok(NULL,"."));
 	    SoftEEPROMWrite(STATIC_IPGW_HIGH_ID, usdata2);
 
@@ -315,6 +281,44 @@ int cmd_static_ipaddr(int argc, char *argv[]) {
 	}
 	return(0);
 }
+
+int cmd_ipmode(int argc, char *argv[]) {
+	tBoolean found;
+    long lEEPROMRetStatus;
+    unsigned short usdata;
+	
+	if (argc < 2) {
+	    lEEPROMRetStatus = SoftEEPROMRead(IPMODE_ID, &usdata, &found);
+		
+	    if(lEEPROMRetStatus != 0) {
+	        cmd_print("\rAn error occurred during a soft EEPROM read operation");
+	        return output_error(lEEPROMRetStatus);
+	    }
+		usdata = found ? usdata : 1;
+		cmd_print("ip mode : %s", usdata == 1 ? "dhcp" : "static");
+		if(usdata == 0) {
+			argv[0] = "ipaddr";
+			cmd_static_ipaddr(1,argv);
+		}
+	} else {
+		if(ustrncmp(argv[1],"dhcp",4) == 0)	{
+			usdata=1;
+		} else {
+			usdata=0;
+		}
+	    lEEPROMRetStatus = SoftEEPROMWrite(IPMODE_ID, usdata);
+
+	    if(lEEPROMRetStatus != 0) {
+	        cmd_print("\r\nAn error occurred during a soft EEPROM write operation");
+	        return output_error(lEEPROMRetStatus);
+	    }
+		if(usdata == 0) {
+			cmd_static_ipaddr(argc,argv);
+		}
+	}
+	return(0);
+}
+
 
 int read_uartmode(int argc, char *argv[]) {
     unsigned short uart_base,uart_len,uart_stop;
@@ -363,17 +367,34 @@ int read_uartmode(int argc, char *argv[]) {
 	return (0);
 }
 
+
+void save_uart_config(unsigned char slave_address,unsigned long uart_speed, unsigned short config, unsigned short uart_base,unsigned long port) {
+	struct uart_info *profile;
+	
+	if(I2C_exists(slave_address)) {
+		profile = (struct uart_info *)pvPortMalloc(sizeof(struct uart_info));
+		profile->magic  = MAGIC;
+		profile->baud   = uart_speed;
+		profile->config = config;
+		profile->port   = port;
+		I2C_write(SLAVE_ADDRESS_MODULE1,(unsigned char *) profile, sizeof(struct uart_info), sizeof(struct module_info)); // write after header
+		vPortFree(profile);
+	} else {
+		cmd_print("\r\n Module %d doesn't exists.",uart_base);
+	}
+}
+
 /*
  This function implements the uart set/display command.  
 
 */
 int cmd_uartmode(int argc, char *argv[]) {
-	struct uart_info *profile;
+
     long lEEPROMRetStatus;
     unsigned short uart_base,data;
-	unsigned long  ul_base,uart_speed;
+	unsigned long  ul_base,uart_speed,port;
 	
-	if (!(argc == 2 || argc == 6)) {
+	if (!(argc == 2 || argc == 6 || argc == 7)) {
         cmd_print("Wrong number of arguments\r\n");
         return(ERROR_UNHANDLED);
 	}
@@ -413,40 +434,30 @@ int cmd_uartmode(int argc, char *argv[]) {
 		}
 		
 		if(uart_base == 0) {
-			lEEPROMRetStatus=SoftEEPROMWrite(UART0_SPEED_HIGH_ID + uart_base, (unsigned short)(uart_speed >> 16));
+			lEEPROMRetStatus=SoftEEPROMWrite(UART0_SPEED_HIGH_ID, (unsigned short)(uart_speed >> 16));
 		    if(lEEPROMRetStatus != 0) {
 				cmd_print("\r\nAn error occurred during a soft EEPROM write operation");
 				return output_error(lEEPROMRetStatus);
 			}
 
-			lEEPROMRetStatus=SoftEEPROMWrite(UART0_SPEED_LOW_ID + uart_base, (unsigned short)uart_speed );
+			lEEPROMRetStatus=SoftEEPROMWrite(UART0_SPEED_LOW_ID, (unsigned short)uart_speed );
 		    if(lEEPROMRetStatus != 0) {
 				cmd_print("\r\nAn error occurred during a soft EEPROM write operation");
 				return output_error(lEEPROMRetStatus);
 			}
 
-			lEEPROMRetStatus=SoftEEPROMWrite(UART0_CONFIG_ID + uart_base, data);
+			lEEPROMRetStatus=SoftEEPROMWrite(UART0_CONFIG_ID, data);
 		    if(lEEPROMRetStatus != 0) {
 				cmd_print("\r\nAn error occurred during a soft EEPROM write operation");
 				return output_error(lEEPROMRetStatus);
 			}
 		} else {
 			switch(uart_base) {
-				case 1: { 
-					if(I2C_exists(SLAVE_ADDRESS_MODULE1)) {
-						profile = (struct uart_info *)pvPortMalloc(sizeof(struct uart_info));
+				case 1: { port= (argc==7) ? ustrtoul(argv[6],NULL,0): 1234; save_uart_config(SLAVE_ADDRESS_MODULE1,uart_speed,data,uart_base,port); break;}
+				case 2: { port= (argc==7) ? ustrtoul(argv[6],NULL,0): 2345; save_uart_config(SLAVE_ADDRESS_MODULE2,uart_speed,data,uart_base,port); break;}
+				case 3: { port= (argc==7) ? ustrtoul(argv[6],NULL,0): 3456; save_uart_config(SLAVE_ADDRESS_MODULE3,uart_speed,data,uart_base,port); break;}
+				case 4: { port= (argc==7) ? ustrtoul(argv[6],NULL,0): 4567; save_uart_config(SLAVE_ADDRESS_MODULE4,uart_speed,data,uart_base,port); break;}
 
-						profile->baud   = uart_speed;
-						profile->config = data;
-						I2C_write(SLAVE_ADDRESS_MODULE1,(unsigned char *) profile, sizeof(struct uart_info), sizeof(struct module_info)); // write after header
-						cmd_print("\r\nuart 1 speed: %d config: %X", profile->baud, profile->config);
-						vPortFree(profile);
-					} else {
-						cmd_print("\r\n Module %d doesn't exists.",uart_base);
-						return 0;
-					}
-					break;}
-				case 2: {ul_base=UART2_BASE;break;}
 				default: {ul_base=UART0_BASE;}
 			}
 			
@@ -509,6 +520,7 @@ int cmd_restart(int argc, char *argv[]) {
 }
 
 
+
 void print_uart(struct console_state *hs) {
 	int i;
 	for(i=0;i<=hs->line;i++) {
@@ -528,9 +540,8 @@ cmdline_entry g_sCmdTable[] = {
     { "help",   cmd_help,      " : Display list of commands" },
     { "clear",  cmd_clear,  "    : Reset soft EEPROM - Usage: clear" },
     { "restart",  cmd_restart,  "    : Restart software  - Usage: restart" },
-    { "ipaddr", cmd_static_ipaddr,  ": set/display static ipaddr address - Usage: ipaddr [addr mask gateway]" },
-    { "ipmode", cmd_ipmode, ": set/display ip acquisition mode - Usage: ipmode [dhcp|static]" },
-    { "uart",   cmd_uartmode, ": set/display uart - Usage: uart <id> <speed> <len> <stop> <parity>" },
+    { "ipmode", cmd_ipmode, ": set/display ipmode - Usage: ipmode [dhcp|static] [addr mask gateway]" },
+    { "uart",   cmd_uartmode, ": set/display uart - uart <id> <speed> <len> <stop> <parity> [port]" },
     { "stats", cmd_stats, ": displays some statistics" },
     { "test", cmd_test, ": set/display eeprom data - Usage: test <char>" },
     { "quit",   cmd_quit,   "    : Quit console" },
