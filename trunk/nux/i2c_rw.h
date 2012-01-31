@@ -1,6 +1,15 @@
 #ifndef __I2C_RW_H__
 #define __I2C_RW_H__
 
+
+#define SLAVE_ADDRESS_MODULE1 0x50
+#define SLAVE_ADDRESS_MODULE2 0x51
+#define SLAVE_ADDRESS_MODULE3 0x52
+#define SLAVE_ADDRESS_MODULE4 0x53
+
+#define PROFILE_UART 0x22
+#define MAGIC 0x3A
+
 void I2C0_init();
 
 struct module_info {
@@ -9,15 +18,16 @@ struct module_info {
 	unsigned short product;
 	unsigned short version;
 	unsigned short profile;
+	unsigned short modres;
+	unsigned short dummy2;
 	unsigned short crc;
-	unsigned short baud;
-	unsigned short config;
 } __attribute__((__packed__));
 
 struct uart_info {
 	unsigned short magic;
 	unsigned long baud;
 	unsigned short config;
+	unsigned long port;
 } __attribute__((__packed__));
 
 

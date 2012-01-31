@@ -35,21 +35,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define STATIC_IPGW_HIGH_ID			(5)
 #define IPMODE_ID					(6)
 #define UART0_SPEED_HIGH_ID			(7)
-#define UART1_SPEED_HIGH_ID			(8)
-#define UART2_SPEED_HIGH_ID			(9)
-#define UART3_SPEED_HIGH_ID			(10)
-#define UART4_SPEED_HIGH_ID			(11)
-#define UART0_SPEED_LOW_ID			(12)
-#define UART1_SPEED_LOW_ID			(13)
-#define UART2_SPEED_LOW_ID			(14)
-#define UART3_SPEED_LOW_ID			(15)
-#define UART4_SPEED_LOW_ID			(16)
-#define UART0_CONFIG_ID				(17)
-#define UART1_CONFIG_ID				(18)
-#define UART2_CONFIG_ID				(19)
-#define UART3_CONFIG_ID				(20)
-#define UART4_CONFIG_ID				(21)
-
+#define UART0_SPEED_LOW_ID			(8)
+#define UART0_CONFIG_ID				(9)
 
 void console_init(void);
 

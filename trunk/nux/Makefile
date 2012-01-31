@@ -48,6 +48,7 @@ SOURCE=	main.c \
 		uart.c \
 		console.c \
 		i2c_rw.c \
+		modules.c \
 		softeeprom/softeeprom.c \
 		utils/vstdlib.c \
 		utils/cmdline.c \

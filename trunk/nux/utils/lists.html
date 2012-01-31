@@ -1,0 +1,431 @@
+<html>
+<head>
+<title>lists.c - Referenz</title>
+</head>
+</body>
+
+<h1>Referenz zu <tt>lists.c</tt></h1>
+
+<ul>
+<li><b><a href="#interna">Interna</a></b>
+<li><b><a href="#benutzung">Die Benutzung der Listenbibliothek</a></b>
+  <ul>
+  <li><b><a href="#konventionen">Konventionen</a></b>
+  <li><b><a href="#anlegen">Anlegen von neuen Listen, Löschen von
+       Listen</a></b>
+  <li><b><a href="#einfuegen">Einfügen und Löschen von
+       Listenelementen</a></b>
+  <li><b><a href="#suchen">Suchen von Werten</a></b>
+  <li><b><a href="#kopieren">Kopieren, Verketten, Trennen von Listen</a></b>
+  <li><b><a href="#sortierte">Sortierte Listen</a></b>
+    <ul>
+    <li><b><a href="#vergleich">Die Vergleichsfunktion
+    <tt>cmp_func</tt></a></b>
+    <li><b><a href="#suchen2">Suchen von Werten in einer sortierten
+         Liste</a></b>
+    <li><b><a href="#einfuegen2">Einfuegen von Werten in eine sortierte
+         Liste</a></b>
+    <li><b><a href="#mischen">Mischen von sortierten Listen</a></b>
+    <li><b><a href="#sortieren">Nachträgliches Sortieren von Listen</a></b>
+    </ul>
+  <li><b><a href="#diverses">Diverses</a></b>
+    <ul>
+    <li><b><a href="#groesse">Listengröße feststellen</a></b>
+    <li><b><a href="#vertauschen">Vertauschen von Listenelementen</a></b>
+    <li><b><a href="#nfach">n Listenelemente vor oder zuruecklaufen</a></b>
+    <li><b><a href="#folge">Reihenfolge von Listenelementen in unsortierten
+           Listen</a></b>
+    </ul>
+  <li><b><a href="#beispiele">Beispiele</a></b>
+    <ul>
+    <li><b><a href="#alle">Alle Listeneinträge berarbeiten</a></b>
+    <li><b><a href="#einige">Alles Listeneinträge einer bestimmten Art
+         bearbeiten</a></b>
+    </ul>
+  </ul>
+<li><b><a href="#changelog">Changelog</a></b></li>
+<li><b><a href="#copyright">Copyright</a></b></li>
+</ul>
+
+<hr>
+<h2><a name="interna">Interna</a></h2>
+
+<p>Listen werden innerhalb der Bibliothek als doppelt verkettete Listen mit
+Kopfelement dargestellt. Jeder Listeneintrag ist vom Typ list_t:</p>
+
+<pre>
+typedef struct list_s{
+   void* val;
+   struct list_s *next, *prev;
+} list_t;
+</pre>
+
+<p>Eine leere Liste besteht nur aus dem Kopfelement. Ein NULL-Zeiger ist
+keine (!) leere Liste.</p>
+
+<p>Der next-Zeiger zeigt auf das nächste Listenelement, der prev-Zeiger auf
+das vorhergehende Listenelement. Der next-Zeiger des letzten Listenelementes
+zeigt auf NULL. Der prev-Zeiger des Kopfelementes der Liste zeigt auf das
+letzte Listenelement (bzw. falls die Liste leer ist, d.h.  nur aus dem
+Kopfelement besteht, auf dieses).</p>
+
+<p>Der val-Zeiger der Listenelemente (außer dem Kopfelement) steht in der
+Verantwortung des Anwenders. Er kann auf irgendetwas völlig beliebiges
+zeigen. Der val-Zeiger des Kopfelementes hat stets den Wert NULL. Man muß
+sich vorstellen, daß der val-Zeiger auf den "Wert" des Listenelementes
+zeigt.</p>
+
+<p>Allerdings wird in keiner Funktion auch tatsächlich nachgeprüft, ob der
+val-Zeiger des Kopfelementes auf NULL zeigt. Man kann also, wenn man eine
+Sache nur mit dem hinteren Teil der Liste (ab dem Listenelement pos
+ausschließlich) machen will, pos als Kopfelement an die Funktionen
+übergeben. Vorsicht ist allerdings mit Funktionen geboten, die die Liste
+verändern und damit ev. den prev-Zeiger des Kopfelementes
+umsetzen. (Vergl. Das Beispiel "Alle Listeneinträge einer bestimmten Art
+bearbeiten".)</p>
+
+<hr>
+<h2><a name="benutzung">Benutzung der Listenbibliothek</a></h2>
+
+<h3><a name="konventionen">Konventionen</a></h3>
+
+<p>Wenn man mit Listen arbeiten will, hat man Variablen vom Typ list_t*. Im
+folgenden Text seien alle Variablen, die mit l anfangen von diesem Typ.</p>
+
+<h3><a name="anlegen">Anlegen von neuen Listen, Löschen von Listen</a></h3>
+
+<p>Bevor man eine Liste benutzen kann, muß man sie anlegen, d.h. ein
+Kopfelement erzeugen. Hierzu gibt es die Funktion</p>
+<pre>
+   list_t* new_list();
+</pre>
+
+<p>Zum Löschen einer ganzen Liste gibt es die Funktion</p>
+<pre>
+  void clear_list (list_t* head, void (*free_func)(void*));
+</pre>
+
+<p>Ist free_func nicht NULL, so wird es mit jedem val-Zeiger aufgerufen,
+bevor der Speicherplatz für das entsprechende Listenelement freigegeben
+wird. free_func dient also dazu, den durch die Werte belegten Speicherplatz
+freizugeben. </p>
+
+<p>Beispiele:</p>
+<pre>
+  l=new_list();          /* legt eine neue Liste an */
+  clear_list (l,NULL);   /* löscht die Liste, aber nicht die Listenwerte. */
+  clear_list (l,free);   /* löscht die Liste und ruft für jeden val-Zeiger free auf. */
+</pre>
+
+<h3><a name="einfuegen">Einfügen und Löschen von Listenelementen</a></h3>
+
+<p>Zum Einfügen und Löschen von einzelnen Listenelementen gibt es die
+Funktionen</p>
+<pre>
+  int     erase_list_element  (list_t* head, list_t* pos, 
+                                           void (*free_func)(void*));
+  list_t* insert_list_element (list_t* head, list_t* pos, void* v);
+</pre>
+
+<p>insert_list_element fügt den Wert v in die Liste head ein, und zwar hinter
+dem Listenelement, auf das pos verweist. erase_list_element löscht aus der
+Liste head das Listenelement, auf das pos verweist. Ist free_func nicht NULL,
+so wird diese Funktion mit dem val-Zeiger aufgerufen. Sie dient dazu, ev.
+für den Wert der Liste allokierten Speicherplatz wieder freizugeben. Ist
+pos==NULL oder zeigt pos auf das Kopfelement der Liste, so wird -1
+zurückgegeben. Im Erfolgsfall wird 0 zurückgegeben.</p>
+
+<p>Beispiele:</p>
+
+<pre>
+   insert_list_element (l,l,v);         /* fügt v am Anfang der Liste ein. */
+   insert_list_element (l,l->prev,v);   /* fügt v am Ende der Liste ein. */
+   erase_list_element (l,l->prev,free); /* löscht das letzte Element der Liste. */
+   erase_list_element (l,l,free);       /* Fehler: Gibt -1 zurück. */
+</pre>
+
+<h3><a name="suchen">Suchen von Werten</a></h3>
+
+<p>Sucht man in einer (unsortierten) Liste einen Wert, so kann man die
+Funktion</p>
+<pre>
+   list_t* find_value (list_t* head, void* v,
+                           int (*cmp_func)(void*,void*));
+</pre>
+
+<p>benutzen. Für Erläuterungen zur Vergleichsfunktion cmp_func s. den
+Abschnitt über sortierte Listen. Wird in der Liste eine Element l gefunden,
+so daß (cmp_func(l->val,v)==0) ist, so wird dieses l zurückgegeben. Wird kein
+solches Element gefunden, so wird NULL zurückgegeben.</p>
+
+<p>Wird als cmp_func NULL übergeben, werden die val-Zeiger der Liste mit v
+verglichen. Wird also in der Liste ein Element l gefunden, so daß (l->val==v)
+ist, so wird dieses l zurückgegeben. Wird keines gefunden, so wird NULL
+zurückgegeben.</p>
+
+<h3><a name="kopieren">Kopieren, Verketten, Trennen von Listen</a></h3>
+
+<p>Hierfür gibt es die Funktionen</p>
+<pre>
+   list_t* copy_list (list_t* head, void* (*copy_func)(void*));
+   void    concat_lists (list_t* l1, list_t* l2);
+   list_t* splice_list (list_t* head, list_t* splitpos);
+</pre>
+
+<p>Copy_list gibt einen Zeiger auf die neu erstellte Liste zurück. Zum
+Kopieren der einzelnen Werte der Liste wird, falls verschieden von NULL, die
+Funktion copy_func verwendet. Ansonsten hat man zwar zwei Listen, aber die
+val-Zeiger der beiden Listen zeigen auf dieselben Adressen.</p>
+
+<p>Concat_lists hängt die Liste l2 hinten an die Liste l1 dran. Der
+Speicherplatz für das Kopfelement von l2 wird freigegeben.</p>
+
+<p>Splice_list trennt die Liste head in zwei Listen auf. Die erste enthält
+alle Listenelement bis einschließlich splitpos. Die zweite enthält alle
+Listenelemente hinter splitpos. Für diese zweite Liste wird ein neues
+Kopfelement erzeugt. Ein Zeiger auf diese zweite Liste wird
+zurückgegeben. Das Kopfelement der übergebenen Liste ist nach der Operation
+auch das Kopfelement der ersten Liste.</p>
+
+<h3><a name="sortierte">Sortierte Listen</a></h3>
+
+<h4><a name="vergleich">Die Vergleichsfunktion cmp_func</a></h4>
+
+<p>Bei allen Operationen mit sortierten Listen muß eine Funktion </p>
+<pre>
+   int (*cmp_func)(void*, void*)
+</pre>
+
+<p>übergeben werden. Diese dient zum Vergleichen zweier Listenwerte. Sie soll
+wie üblich einen Wert &lt;0 zurückgeben, falls der erste übergebene Wert
+"kleiner" als der zweite ist, 0, falls sie "gleich" sind, und einen Wert
+&gt;0, falls der zweite "kleiner" ist.</p>
+
+<p>Für die Operationen mit sortierten Listen wird eigentlich nur der Test auf
+"kleiner sein" benötigt (Rückgabewert &lt;0). Einzige Ausnahmen sind die
+Funktionen find_value und find_sorted_value. Für alle anderen Funktionen, die
+sortierte Listen behandeln, würde es also auch reichen, wenn die Funktion -1
+zurückgibt, wenn der erste Wert kleiner dem zweiten ist, und ansonsten 0 oder
++1 (je nachdem, was dem Programmierer besser gefällt).</p>
+
+<p>Wenn hier von einer sortierten Liste die Rede ist, so ist damit eine Liste
+gemeint, in der kein Listenelement kleiner als ein vorhergehendes
+Listenelement ist. Anders ausgedrückt: Vergleicht man alle Listenelemente von
+vorne an mit einem festen Wert, so liefert cmp_func zunächst lauter -1en,
+dann andere Werte. (Hat man die cmp_func "vernünftig" programmiert, so werden
+als nächstes natürlich lauter 0en, und dann lauter +1en kommen.)</p>
+
+<h4><a name="suchen2">Suchen von Werten in einer sortierten Liste</a></h4>
+
+<p>Dazu gibt es die Funktion</p>
+<pre>
+   list_t* find_sorted_value (list_t* head, void* v, 
+                          int (*cmp_func)(void*, void*));
+</pre>
+
+<p>find_sorted_value schaut nach, ob der übergebene Wert in der sortierten
+Liste head existiert, d.h. ob ein Listenelement existiert, dessen Wert, mit v
+verglichen, 0 ergibt. Ist dies der Fall, so wird ein Zeiger auf dieses
+Listenelement zurückgegeben. Wird kein solches Element gefunden, so wird NULL
+zurückgegeben.</p>
+
+<h4><a name="einfuegen2">Einfügen von Werten in eine sortierte Liste</a></h4>
+
+<p>Das geht mit Hilfe der Funktion</p>
+<pre>
+   list_t* insert_sorted_element (list_t* head, void* v,
+                             int (*cmp_func)(void*, void*));
+</pre>
+
+<p>Diese Funktion fügt den Wert v in die mit Hilfe der Vergleichsfunktion
+cmp_func sortierten Liste head an der richtigen Stelle ein, nämlich hinter
+dem letzten Listenelement, welches noch kleiner als v ist. Der Rückgabewert
+ist ein Zeiger auf das Listenelement, hinter dem v eingefügt wurde. Es ist
+also (insert_sorted_element->next->val == v).</p>
+
+<h4><a name="mischen">Mischen von sortierten Listen</a></h4>
+
+<p>Zum Mischen von sortierten Listen gibt es die Funktion</p>
+<pre>
+   list_t* merge_sorted_lists (list_t* l1, list_t* l2,
+                               int (*cmp_func)(void*, void*)); 
+</pre>
+
+<p>Diese Funktion mischt die beiden sortierten Listen l1 und l2 zu einer
+großen, sortierten Liste zusammen. Ein Zeiger auf das Kopfelement dieser
+Liste wird zurückgegeben. Der von den Kopfelementen von l1 und l2 belegte
+Speicherplatz wird freigegeben.</p>
+
+<p>Hierbei wird kein weiterer Speicherplatz belegt. Es werden lediglich die
+schon bestehenden Listenelement neu verkettet.</p>
+
+<h4><a name="sortieren">Nachträgliches Sortieren von Listen</a></h4>
+
+<p>Es stehen zwei Sortieralgorithmen zur Verfügung:</p>
+<pre>
+   void bubblesort_list (list_t* l, int (*cmp_func)(void*, void*));
+   void mergesort_list  (list_t* l, int (*cmp_func)(void*, void*));
+</pre>
+
+<p>Weitere Angaben erübrigen sich vermutlich.</p>
+
+<p>Bubblesort_list implementiert nicht genau den Bubblesort-Algorithmus,
+sondern nur einen ähnlichen Algorithmus. Laufzeit ist O(n^2).</p>
+
+<p>Mergesort benutzt nicht die obige Funktion merge_sorted_lists, sondern
+eine eigene Funktion zum Mischen von Teillisten einer Liste. Laufzeit ist
+O(n*log(n)), allerdings ist der Faktor davor wesentlich größer als bei
+Bubblesort. Im Gegensatz zu Implementierungen von Mergesort bei arrays
+braucht dieses mergesort keinen weiteren Speicherplatz. Es verkettet die
+Listenelement nur neu.</p>
+
+<h3><a name="diverses">Diverses</a></h3>
+
+<h4><a name="groesse">Listengröße feststellen</a></h4>
+<pre>
+   int list_size (list_t* head);
+</pre>
+
+<p>gibt die Anzahl der Element der Liste head zurück. Das Kopfelement zählt
+dabei nicht als Listenelement. Der Rückgabewert 0 ist also erlaubt. Tritt ein
+Fehler auf (d.h. ist der übergebene Zeiger head NULL), so wird -1
+zurückgegeben.</p>
+
+<h4><a name="vertauschen">Vertauschen von Listenelement</a></h4>
+
+<p>Dies besorgt die Funktion</p>
+<pre>
+   void swap_list_elements (list_t* head, list_t* pos1, list_t* pos2);
+</pre>
+
+<p>Diese vertauscht in der Liste head die beiden Listenelement pos1 und
+pos2. Natürlich darf keiner dieser beiden Zeiger auf das Kopfelement zeigen,
+sonst gibt es ein Unglück.</p>
+
+
+<h4><a name="nfach">n Listenelemente vor oder zuruecklaufen</a></h4>
+
+<p>Mit Hilfe der beiden Funktionen</p>
+
+<pre>
+   list_t*  next_n (list_t* head, list_t* pos, int n);
+   list_t*  prev_n (list_t* head, list_t* pos, int n);
+</pre>
+
+<p>kann man von der Position pos an n Listenelemente vorwärts (next_n)
+bzw. zurück (pref_n) laufen. Es wird diese neue Position zurückgegeben. Wird
+das Listenende (beim Vorwärtslaufen) oder das Kopfelement der Liste (beim
+Rückwärtslaufen) erreicht, so wird NULL zurückgegeben.</p>
+
+<h4><a name="folge">Reihenfolge von Listenelementen in unsortierten
+Listen</a></h4>
+
+<p>Mit der Funktion</p>
+<pre>
+   int list_t_cmp (list_t* head, list_t* l1, list_t* l2);
+</pre>
+
+<p>kann sogar in unsortierten Listen überprüft werden, welcher der beiden
+Einträge l1 oder l2 als erstes in der Liste head vorkommt. Der Rückgabe
+wertet richtet sich nach dem cmp-Standart: Er ist negativ, wenn l1 zuerst
+vorkommen, 0 wenn l1==l2 ist, und positiv sonst.</p>
+
+<p>Wird weder l1 noch l2 in der Liste gefunden, so wird ebenfalls 0
+zurückgegeben.</p>
+
+<h3><a name="beispiele">Beispiele</a></h3>
+
+<h4><a name="alle">Alle Listeneinträge bearbeiten</a></h4>
+
+<p>Das geht ganz einfach:</p>
+<pre>
+   list_t* p=list_head;
+   while (p=p->next) {
+       /* tue irgendetwas mit p->val */
+       }
+</pre>
+
+<h4><a name="einige">Alle Listeneinträge einer bestimmten Art
+bearbeiten</a></h4>
+
+<p>Es sollen alle Listeneinträge irgendwie bearbeitet werden, für die die
+Funktion cmp_func(*,v) Null ist:</p>
+<pre>
+   void* v  /* = irgendwas */
+   list_t* p=list_head;
+   while (p=find_value (p,v,cmp_func)) {
+      /* tue irgendetwas mit p->val */
+      }
+</pre>
+
+<hr>
+<h2><a name="changelog">Changelog</a></h2>
+
+<dl>
+<dt>12.04.2000
+<dd>Erste lauffähige Version fertig.
+
+<dt>18.7.2000
+<dd><tt>list_t_cmp</tt> hinzugefügt
+
+<dt>20.8.2000
+<dd><tt>next_n</tt> und <tt>prev_n</tt> hinzugefügt. Dokumentation auf html
+umgestellt.
+
+<dt>13.8.2001
+<dd>Die Funktion <tt>find_value</tt> ist erweitert worden. Die neue Version
+steht nicht mehr unter der LGPL, sondern unter einer BSD-Lizenz.
+
+<dt>27.10.2001</dt>
+<dd>Eine Bug in <tt>concat_lists</tt> gefixt, der zu einem Segmentation-fault
+führte, wenn man zwie leere Listen verkettete.</dd>
+
+</dl>
+
+<hr>
+<h2><a name="copyright">Copyright</a></h2>
+
+<p>Diese library steht unter der BSD-Lizenz:</p>
+
+<blockquote>
+<p>Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:</p>
+
+<ul>
+<li>Redistributions of source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.</li>
+
+<li>Redistributions in binary form must reproduce the above copyright notice,
+this list of conditions and the following disclaimer in the documentation
+and/or other materials provided with the distribution.</li>
+
+<li>My name may not be used to endorse or promote products derived from this
+software without specific prior written permission.</li>
+</ul>
+
+<p>THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
+IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR
+ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</p>
+
+</blockquote>
+
+<p>Zu Deutsch: Diese Software darf frei kopiert werden. Sie darf für
+kommerzielle sowie für freie Programme verwendet werden, sofern erwähnt wird,
+daß diese Library unter dieser Lizenz steht.</p>
+
+<p>Weiterhin bestätigt der Autor hiermit, daß er die library nach bestem
+Wissen und Gewissen erstellt hat. Er übernimmt jedoch keinerlei Verantwortung
+oder Garantien für was auch immer.</p>
+
+<p>Michael Becker <a href="mailto:michael.www@ijon.de">michael.www@ijon.de
+</a>, 13.8.2001</p>
+
+</body>

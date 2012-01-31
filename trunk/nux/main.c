@@ -48,7 +48,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "ETHIsr.h"
 #include "softeeprom.h"
 #include "console.h"
-#include "i2c_rw.h"
+#include "modules.h"
 
 /*-----------------------------------------------------------*/
 static const char * const g_pcHex = "0123456789abcdef";
@@ -79,7 +79,7 @@ volatile unsigned short should_reset; // watchdog variable to perform a reboot
 unsigned int stats_queue_full;
 unsigned int stats_uart1_rcv;
 unsigned int stats_uart1_sent;
-
+unsigned int stats_crc_error;
 
 
 /*
@@ -193,7 +193,7 @@ void prvSetupHardware( void ){
     long lEEPROMRetStatus;
     unsigned short data,data2;
 	unsigned long uart_speed;
-	
+		
     /* If running on Rev A2 silicon, turn the LDO voltage up to 2.75V.  This is
     a workaround to allow the PLL to operate reliably. */
     if( DEVICE_IS_REVA2 )    {
@@ -229,22 +229,20 @@ void prvSetupHardware( void ){
     SysCtlPeripheralEnable(SYSCTL_PERIPH_UART0);
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);
 
-	SysCtlPeripheralEnable(SYSCTL_PERIPH_UART1);
-	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOD);
-	
     //
     // Enable processor interrupts.
     //
     IntMasterEnable();
 
-    // set MOD_RES == Low
-    GPIOPinTypeGPIOOutput( GPIO_PORTA_BASE, GPIO_PIN_7 );
-    GPIOPinWrite(GPIO_PORTA_BASE, GPIO_PIN_7, 0xff);
-
     //
     // Set GPIO A0 and A1 as UART pins.
     //
     GPIOPinTypeUART(GPIO_PORTA_BASE, GPIO_PIN_0 | GPIO_PIN_1);
+
+
+	SysCtlPeripheralEnable(SYSCTL_PERIPH_UART1); // init uart 1
+	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOD);
+
 	GPIOPinTypeUART(GPIO_PORTD_BASE, GPIO_PIN_2 | GPIO_PIN_3);
 
     //
@@ -267,16 +265,6 @@ void prvSetupHardware( void ){
     UARTConfigSetExpClk(UART0_BASE, SysCtlClockGet(), uart_speed,  data);
 
 
-    lEEPROMRetStatus = SoftEEPROMRead(UART1_SPEED_HIGH_ID, &data, &found);
-	if(lEEPROMRetStatus == 0 && found) {
-	    SoftEEPROMRead(UART1_SPEED_LOW_ID, &data2, &found);
-		uart_speed = (data << 16 & 0xFFFF0000) | (data2 & 0x0000FFFF);
-	    SoftEEPROMRead(UART1_CONFIG_ID, &data, &found);
-	} else {
-		uart_speed=115200;
-		data = (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE | UART_CONFIG_PAR_NONE);
-	}
-    UARTConfigSetExpClk(UART1_BASE, SysCtlClockGet(), uart_speed, data);
 
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_WDOG0);
 
@@ -285,7 +273,8 @@ void prvSetupHardware( void ){
     WatchdogResetEnable(WATCHDOG0_BASE);
     WatchdogEnable(WATCHDOG0_BASE);
 
-	I2C0_init();
+	modules_init();
+
 }
 /*-----------------------------------------------------------*/
 
