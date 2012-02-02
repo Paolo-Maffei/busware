@@ -8,6 +8,8 @@
 #define SLAVE_ADDRESS_MODULE4 0x53
 
 #define PROFILE_UART 0x22
+#define PROFILE_CRC  0x33
+
 #define MAGIC 0x3A
 
 void I2C0_init();
@@ -24,10 +26,19 @@ struct module_info {
 } __attribute__((__packed__));
 
 struct uart_info {
-	unsigned short magic;
+	unsigned short profile;
 	unsigned long baud;
 	unsigned short config;
 	unsigned long port;
+	unsigned long base;
+	unsigned long recv;
+	unsigned long sent;
+} __attribute__((__packed__));
+
+struct crc_info {
+	unsigned short profile;
+	unsigned short crc;
+	unsigned short crc2;
 } __attribute__((__packed__));
 
 

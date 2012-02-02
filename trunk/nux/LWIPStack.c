@@ -51,7 +51,7 @@
 #include "telnetd.h"
 #include "rawuart.h"
 #include "modules.h"
-
+#include "i2c_rw.h"
 #include "ETHIsr.h"
 #include "LWIPStack.h"
 
@@ -533,8 +533,7 @@ void LWIPServiceTaskInit(void *pvParameters) {
 	struct ip_addr ip_addr;
 	struct ip_addr net_mask;
 	struct ip_addr gw_addr;
-	extern unsigned int module_uart_avail;
-	extern unsigned int module_uart_port[4];
+	struct uart_info *profile;
 	
 	LWIP_ASSERT("pvParameters != NULL", (pvParameters != NULL));
 
@@ -615,8 +614,11 @@ void LWIPServiceTaskInit(void *pvParameters) {
 	}
 
 	blinky(2);
-	if((module_uart_avail & MODULE1) != 0) {
-		rawuart_init(module_uart_port[0],UART1_BASE);
+	for(size_t i = MODULE1; i <= MODULE4; i++)	{
+		if(module_exists(i) && (module_profile_id(i) == PROFILE_UART)) {
+			profile = get_uart_profile(i);
+			rawuart_init(profile->port,profile);
+		}
 	}
 	telnetd_init();
 }

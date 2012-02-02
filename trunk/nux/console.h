@@ -40,14 +40,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 void console_init(void);
 
-#define TELNETD_CONF_LINELEN 80
+#define TELNETD_CONF_LINELEN 120
 #define TELNETD_CONF_NUMLINES 16
 
 struct console_state {
   char *lines[TELNETD_CONF_NUMLINES];
   int line;
 };
-
-#define line_malloc (char *)pvPortMalloc(TELNETD_CONF_LINELEN)
 
 #endif /* __CONSOLE__ */
