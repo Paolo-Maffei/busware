@@ -27,6 +27,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include "inc/hw_types.h"
 #include "driverlib/uart.h"
+#include "i2c_rw.h"
 
 #ifdef LWIP_DEBUG
 #define LWIP_DEBUGAPPS LWIPDebug
@@ -52,6 +53,7 @@ struct uart_state {
 	u8_t state;
 	u16_t left;
 	unsigned long base;
+	struct uart_info *uart;
 	char data[DATA_BUF_SIZE];
 };
 
@@ -87,7 +89,6 @@ static void send_data(struct tcp_pcb *pcb, struct uart_state *es) {
 	err_t err;
 	u16_t len,i;
 	char *data;
-	extern unsigned int stats_uart1_rcv;
 	
 	if(es->left > 0) {
 		data = es->data + DATA_BUF_SIZE - es->left;
@@ -106,7 +107,7 @@ static void send_data(struct tcp_pcb *pcb, struct uart_state *es) {
 		data=es->data;
 		while (UARTCharsAvail(es->base) && (i<len)) {
 			*data++ = UARTCharGet(es->base);
-			stats_uart1_rcv++;
+			es->uart->recv++;
 			i++;
 		}
 		if(i == 0) {
@@ -157,7 +158,7 @@ static err_t uart_sent(void *arg, struct tcp_pcb *pcb, u16_t len) {
 err_t uart_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t err) {
  	struct uart_state *es;
 	char *data;
-	extern unsigned int stats_uart1_sent;
+
 			
   	LWIP_ASSERT("arg != NULL",arg != NULL);
   	es = (struct uart_state *)arg;
@@ -182,7 +183,7 @@ err_t uart_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t err) {
 		do {
 			data = (char *)p->payload;
 			UARTSend(es->base,data,p->len);
-			stats_uart1_sent += p->len;
+			es->uart->sent += p->len;
 		} while((p = p->next));
 		
 		pbuf_free(p);
@@ -211,10 +212,10 @@ static err_t uart_poll(void *arg, struct tcp_pcb *pcb){
 
 err_t uart_accept(void *arg, struct tcp_pcb *tpcb, err_t err) {
     struct uart_state *es;
-	unsigned long base;
+	struct uart_info *uart_config;
 	
 	LWIP_UNUSED_ARG(arg);
-	base = *((unsigned long *)arg);
+	uart_config = (struct uart_info *)arg;
 /* commonly observed practive to call tcp_setprio(), why? */
 	tcp_setprio(tpcb, TCP_PRIO_MIN);
 
@@ -226,7 +227,8 @@ err_t uart_accept(void *arg, struct tcp_pcb *tpcb, err_t err) {
   	if (es != NULL)   {
 		es->state = ES_ACCEPTED;
 		es->left  = 0;
-		es->base = base;
+		es->base = uart_config->base;
+		es->uart = uart_config;
 		/* pass newly allocated es to our callbacks */
 	    tcp_arg(tpcb, es);
 		tcp_err(tpcb, uart_error);
@@ -242,9 +244,9 @@ err_t uart_accept(void *arg, struct tcp_pcb *tpcb, err_t err) {
 	return err;  
 }
 
-void rawuart_init(u16_t port, unsigned long base) {
+void rawuart_init(u16_t port, struct uart_info *uart_config) {
 	struct tcp_pcb *pcb;
-	unsigned long *arg;
+
 
 	pcb = tcp_new();
 	if (pcb != NULL)   {
@@ -254,13 +256,7 @@ void rawuart_init(u16_t port, unsigned long base) {
 		if (err == ERR_OK)   {
 			pcb = tcp_listen(pcb);
 			tcp_accept(pcb, uart_accept);
-			arg = (unsigned long *)pvPortMalloc(sizeof(unsigned long));
-			if (arg != NULL)   {
-				*arg = base;
-				tcp_arg(pcb, arg);
-			} else {
-				LWIP_DEBUGAPPS("Not enough memory.\r\n");
-			}
+			tcp_arg(pcb, uart_config);
 		}
 	}
 }

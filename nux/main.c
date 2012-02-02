@@ -76,11 +76,6 @@ static void prvSetupHardware( void ); // configure the hardware
 volatile unsigned short should_reset; // watchdog variable to perform a reboot
 
 // global stats
-unsigned int stats_queue_full;
-unsigned int stats_uart1_rcv;
-unsigned int stats_uart1_sent;
-unsigned int stats_crc_error;
-
 
 /*
   required when compiling with MemMang/heap_3.c
@@ -163,10 +158,6 @@ void ethernetThread(void *pvParameters) {
  * various Luminary Micro EKs.
  *************************************************************************/
 int main( void ) {
-	stats_queue_full=0;
-	stats_uart1_rcv =0;
-	stats_uart1_sent =0;
-	
 	prvSetupHardware();
 
 	/* Create the uIP task if running on a processor that includes a MAC and
@@ -456,6 +447,8 @@ void LWIPDebug(const char *pcString, ...) {
 			}
 		}
 	}
+	
+	UARTSend(UART0_BASE, "\r\n", 2);
 	va_end(vaArgP);
 }
 

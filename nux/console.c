@@ -32,6 +32,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "softeeprom.h"
 #include "console.h"
 #include "i2c_rw.h"
+#include "modules.h"
 #include "crc.h"
 
 extern void UARTSend(unsigned long ulBase, const char *pucBuffer, unsigned short ulCount);
@@ -46,25 +47,30 @@ struct console_state *cmd_out;
 const portCHAR * const welcome = "\r\nNUX console V1.0\r\nType \'help\' for help.\r\n";
 const portCHAR * const prompt = "\r\nnux> ";
 
+int read_uartmode(int argc, char *argv[]);
 
 /* Helper function to print a line to a virtual screen
 */
 int cmd_print(const char *pcString, ...) {
 	va_list vaArgP;
 	char *str;
-	int len;
+	int len=0;
 	
-	str= (char *)pvPortMalloc(TELNETD_CONF_LINELEN);
-	if(str == NULL) {
-		return ERROR_MEM;
+
+	if(cmd_out->line + 1 < TELNETD_CONF_NUMLINES) {
+	    cmd_out->line++;
+
+		str= (char *)pvPortMalloc(TELNETD_CONF_LINELEN);
+		if(str == NULL) {
+			return ERROR_MEM;
+		}
+
+	    va_start(vaArgP, pcString); // Start the varargs processing.
+	    len = uvsnprintf(str, TELNETD_CONF_LINELEN, pcString, vaArgP);
+	    va_end(vaArgP);
+
+		cmd_out->lines[cmd_out->line] = str;
 	}
-
-    va_start(vaArgP, pcString); // Start the varargs processing.
-    len = uvsnprintf(str, TELNETD_CONF_LINELEN, pcString, vaArgP);
-    va_end(vaArgP);
-
-    cmd_out->line++;
-	cmd_out->lines[cmd_out->line] = str;
 	
 	return len;
 }
@@ -159,19 +165,36 @@ int cmd_clear(int argc, char *argv[]) {
 }
 
 
-
+/* This function prints out some module stats
+*/
 int cmd_stats(int argc, char *argv[]) {
-	extern unsigned int stats_uart1_rcv;
-	extern unsigned int stats_uart1_sent;
-	extern unsigned int module_uart_avail;
-	extern unsigned int stats_crc_error;
-
-	cmd_print("\r\n module avail: %X crc error: %X", module_uart_avail,stats_crc_error);
-	cmd_print("\r\n uart1 recv: %d sent: %d", stats_uart1_rcv,stats_uart1_sent);
-
-    return(0);
+	struct uart_info *uart_config;
+	struct crc_info *crc_config;
+	char buf[3];
+	
+	for(size_t i = MODULE1; i <= MODULE4; i++)	{
+		if(module_exists(i))	{
+			switch	(module_profile_id(i)) {
+				case PROFILE_UART: {
+					uart_config = get_uart_profile(i);
+					cmd_print("\r\nmodule id: %d base: %X port: %d rcv: %d sent: %d profile: ", i, uart_config->base, uart_config->port,uart_config->recv, uart_config->sent);
+					usnprintf((char *)&buf, 3, "%d",i+1);
+					argc=2;
+					argv[1]=(char *)&buf;
+					read_uartmode(argc,argv);
+					break;}
+					case PROFILE_CRC: {
+						crc_config = get_crc_profile(i);
+						cmd_print("\r\nmodule id: %d profile: %s crc: %X crc2: %X", i, "crc error", crc_config->crc,crc_config->crc2);
+						
+						break;}
+			};
+		} else {
+			cmd_print("\r\nmodule id: %d not available", i);
+		}
+	}
+	return(0);
 }
-
 
 int cmd_test(int argc, char *argv[]) {
 	struct module_info *header;
@@ -363,7 +386,7 @@ int read_uartmode(int argc, char *argv[]) {
 	}
 
     // uart baud rate doesn't divide perfectly into whatever your system clock is set to
-	cmd_print("UART%d %d %d %c %d", uart_base, uart_speed,  uart_len , uart_parity, uart_stop );
+	cmd_print("uart%d speed: %d config: %d %c %d", uart_base, uart_speed,  uart_len , uart_parity, uart_stop );
 	return (0);
 }
 
@@ -373,7 +396,7 @@ void save_uart_config(unsigned char slave_address,unsigned long uart_speed, unsi
 	
 	if(I2C_exists(slave_address)) {
 		profile = (struct uart_info *)pvPortMalloc(sizeof(struct uart_info));
-		profile->magic  = MAGIC;
+		profile->profile  = PROFILE_UART;
 		profile->baud   = uart_speed;
 		profile->config = config;
 		profile->port   = port;
@@ -441,16 +464,7 @@ int cmd_uartmode(int argc, char *argv[]) {
 			}
 
 			lEEPROMRetStatus=SoftEEPROMWrite(UART0_SPEED_LOW_ID, (unsigned short)uart_speed );
-		    if(lEEPROMRetStatus != 0) {
-				cmd_print("\r\nAn error occurred during a soft EEPROM write operation");
-				return output_error(lEEPROMRetStatus);
-			}
-
 			lEEPROMRetStatus=SoftEEPROMWrite(UART0_CONFIG_ID, data);
-		    if(lEEPROMRetStatus != 0) {
-				cmd_print("\r\nAn error occurred during a soft EEPROM write operation");
-				return output_error(lEEPROMRetStatus);
-			}
 		} else {
 			switch(uart_base) {
 				case 1: { port= (argc==7) ? ustrtoul(argv[6],NULL,0): 1234; save_uart_config(SLAVE_ADDRESS_MODULE1,uart_speed,data,uart_base,port); break;}

@@ -17,21 +17,21 @@
 #include "crc.h"
 
 
-unsigned int module_uart_avail;
-unsigned int module_uart_port[4];
+unsigned char *module[4];
 
 void modules_init() {
 	I2C0_init();
-	module_uart_avail=0;
-	
+	for(size_t i = MODULE1; i <= MODULE4; i++)	{
+		module[i]=NULL;
+	}
 	module1_init();
 }
 
 void module1_init() {
 	unsigned short crc_sum;
 	struct module_info *header;
-	struct uart_info *profile;
-	extern unsigned int stats_crc_error;
+	struct uart_info *uart_config;
+	struct crc_info *crc_error;
 	
 	
 	header = (struct module_info *)pvPortMalloc(sizeof(struct module_info));
@@ -45,24 +45,43 @@ void module1_init() {
     		GPIOPinWrite(GPIO_PORTA_BASE, GPIO_PIN_7, header->modres);
 
 			if(header->profile == PROFILE_UART) {
-				module_uart_avail |= MODULE1; // Modul exists
-
-				profile = (struct uart_info *)pvPortMalloc(sizeof(struct uart_info));
-				I2C_read(SLAVE_ADDRESS_MODULE1, (unsigned char *) profile, sizeof(struct uart_info), sizeof(struct module_info));
-				if(profile->magic == MAGIC) {
-					UARTConfigSetExpClk(UART1_BASE, SysCtlClockGet(), profile->baud, profile->config);
-					module_uart_port[0] = profile->port;
-				} else {
-					UARTConfigSetExpClk(UART1_BASE, SysCtlClockGet(), 115200, (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE | UART_CONFIG_PAR_NONE));
-					module_uart_port[0] = 1234;
+				uart_config = (struct uart_info *)pvPortMalloc(sizeof(struct uart_info));
+				I2C_read(SLAVE_ADDRESS_MODULE1, (unsigned char *) uart_config, sizeof(struct uart_info), sizeof(struct module_info));
+				if(uart_config->profile != PROFILE_UART) {
+					uart_config->baud = 115200;
+					uart_config->config = (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE | UART_CONFIG_PAR_NONE);
+					uart_config->port = 1234;
 				}
-				vPortFree(profile);
+				uart_config->profile = PROFILE_UART;
+				uart_config->recv    = 0;
+				uart_config->sent    = 0;
+				uart_config->base    = UART1_BASE;
+				UARTConfigSetExpClk(uart_config->base, SysCtlClockGet(), uart_config->baud, uart_config->config);
+				module[0] = (unsigned char *)uart_config;
 			}
 		} else {
-			stats_crc_error = 1;
+			crc_error = (struct crc_info *)pvPortMalloc(sizeof(struct crc_info));
+			crc_error->profile = PROFILE_CRC;
+			crc_error->crc = header->crc;
+			crc_error->crc2 = crc_sum;
 		}
 	}
 	
 	
 	vPortFree(header);
+}
+
+unsigned short module_profile_id(unsigned short module_idx) {
+	return *(unsigned short *)module[module_idx];
+}
+
+struct uart_info *get_uart_profile(unsigned short module_idx) {
+	return (struct uart_info *)module[module_idx];
+}
+
+struct crc_info *get_crc_profile(unsigned short module_idx){
+	return (struct crc_info *)module[module_idx];
+}
+unsigned short module_exists(unsigned short module_idx) {
+	return (module[module_idx] == NULL) ? 0 : 1;
 }

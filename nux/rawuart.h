@@ -18,7 +18,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #ifndef __RAWUART_H__
 #define __RAWUART_H__
+#include "i2c_rw.h"
 
-void rawuart_init(u16_t port, unsigned long ul_base);
+void rawuart_init(u16_t port, struct uart_info *uart_config);
 
 #endif /* __RAWUART_H__ */
