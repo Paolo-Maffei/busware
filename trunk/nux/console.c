@@ -177,7 +177,7 @@ int cmd_stats(int argc, char *argv[]) {
 			switch	(module_profile_id(i)) {
 				case PROFILE_UART: {
 					uart_config = get_uart_profile(i);
-					cmd_print("\r\nmodule id: %d base: %X port: %d rcv: %d sent: %d profile: ", i, uart_config->base, uart_config->port,uart_config->recv, uart_config->sent);
+					cmd_print("\r\nmodule id: %d base: %X port: %d rcv: %d sent: %d err: %d lost: %d profile: ", i, uart_config->base, uart_config->port,uart_config->recv, uart_config->sent, uart_config->err, uart_config->lost);
 					usnprintf((char *)&buf, 3, "%d",i+1);
 					argc=2;
 					argv[1]=(char *)&buf;
@@ -198,7 +198,7 @@ int cmd_stats(int argc, char *argv[]) {
 
 int cmd_test(int argc, char *argv[]) {
 	struct module_info *header;
-	struct uart_info *profile;
+	struct uart_profile *profile;
 
 	
 	header = (struct module_info *)pvPortMalloc(sizeof(struct module_info));
@@ -223,9 +223,9 @@ int cmd_test(int argc, char *argv[]) {
 		cmd_print("\r\ni2c module magic: %X vendor: %X product: %X version: %X profile: %X modres: %X", header->magic, header->vendor, header->product, header->version, header->profile, header->modres);
 
 		if(header->profile == 0x22) {
-			profile = (struct uart_info *)pvPortMalloc(sizeof(struct uart_info));
+			profile = (struct uart_profile *)pvPortMalloc(sizeof(struct uart_profile));
 			
-			I2C_read(SLAVE_ADDRESS_MODULE1, (unsigned char *) profile, sizeof(struct uart_info), sizeof(struct module_info));
+			I2C_read(SLAVE_ADDRESS_MODULE1, (unsigned char *) profile, sizeof(struct uart_profile), sizeof(struct module_info));
 			
 			cmd_print("\r\nuart 1 speed: %d config: %X port: %d", profile->baud, profile->config, profile->port);
 			vPortFree(profile);
@@ -392,15 +392,16 @@ int read_uartmode(int argc, char *argv[]) {
 
 
 void save_uart_config(unsigned char slave_address,unsigned long uart_speed, unsigned short config, unsigned short uart_base,unsigned long port) {
-	struct uart_info *profile;
+	struct uart_profile *profile;
 	
 	if(I2C_exists(slave_address)) {
-		profile = (struct uart_info *)pvPortMalloc(sizeof(struct uart_info));
+		profile = (struct uart_profile *)pvPortMalloc(sizeof(struct uart_profile));
 		profile->profile  = PROFILE_UART;
 		profile->baud   = uart_speed;
 		profile->config = config;
 		profile->port   = port;
-		I2C_write(SLAVE_ADDRESS_MODULE1,(unsigned char *) profile, sizeof(struct uart_info), sizeof(struct module_info)); // write after header
+		I2C_write(slave_address,(unsigned char *) profile, sizeof(struct uart_profile), sizeof(struct module_info)); // write after header
+		vTaskDelay(100 / portTICK_RATE_MS); // there must be a delay after write or avoid I2C_read()
 		vPortFree(profile);
 	} else {
 		cmd_print("\r\n Module %d doesn't exists.",uart_base);

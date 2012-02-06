@@ -14,37 +14,11 @@
 
 void I2C0_init();
 
-struct module_info {
-	unsigned short magic;
-	unsigned short vendor;
-	unsigned short product;
-	unsigned short version;
-	unsigned short profile;
-	unsigned short modres;
-	unsigned short dummy2;
-	unsigned short crc;
-} __attribute__((__packed__));
-
-struct uart_info {
-	unsigned short profile;
-	unsigned long baud;
-	unsigned short config;
-	unsigned long port;
-	unsigned long base;
-	unsigned long recv;
-	unsigned long sent;
-} __attribute__((__packed__));
-
-struct crc_info {
-	unsigned short profile;
-	unsigned short crc;
-	unsigned short crc2;
-} __attribute__((__packed__));
-
 
 
 //*****************************************************************************
 // Non Interupt driven Write to the Eeprom.
+// The eeprom cant write more then 16 bytes at once!!!!
 // \param slave_address is the Control byte shift right once. (0x50=0xA0>>1)  
 // \param data is the value to be written in the Eeprom
 // \param length is the length of the value to be written in the Eeprom

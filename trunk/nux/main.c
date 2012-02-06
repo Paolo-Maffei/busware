@@ -220,6 +220,10 @@ void prvSetupHardware( void ){
     SysCtlPeripheralEnable(SYSCTL_PERIPH_UART0);
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);
 
+
+	SysCtlPeripheralEnable(SYSCTL_PERIPH_UART1); // init uart 1
+	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOD);
+
     //
     // Enable processor interrupts.
     //
@@ -230,9 +234,6 @@ void prvSetupHardware( void ){
     //
     GPIOPinTypeUART(GPIO_PORTA_BASE, GPIO_PIN_0 | GPIO_PIN_1);
 
-
-	SysCtlPeripheralEnable(SYSCTL_PERIPH_UART1); // init uart 1
-	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOD);
 
 	GPIOPinTypeUART(GPIO_PORTD_BASE, GPIO_PIN_2 | GPIO_PIN_3);
 
