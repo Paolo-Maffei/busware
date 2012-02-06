@@ -111,6 +111,10 @@
 *****************************************************************************/
 #define LWIP_SOCKET                     0           // default is 1
 #define LWIP_SO_RCVTIMEO                1
+/**
+ * TCP_LISTEN_BACKLOG: Enable the backlog option for tcp listen pcb.
+ */
+#define TCP_LISTEN_BACKLOG              1
 
 /*****************************************************************************
  ---------- Statistics options ----------

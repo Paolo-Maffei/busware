@@ -354,6 +354,11 @@ int read_uartmode(int argc, char *argv[]) {
 	}
 
 	uart_base = ustrtoul(argv[1],NULL,0);
+
+	if(uart_base > 0 && !module_exists(uart_base-1)) {
+		cmd_print("\r\nUart not initialised. Module %d doesn't exists.", uart_base);
+		return(0);
+	}
 	
 	switch(uart_base) {
 		case 1: {ul_base=UART1_BASE; break;}
@@ -467,13 +472,15 @@ int cmd_uartmode(int argc, char *argv[]) {
 			lEEPROMRetStatus=SoftEEPROMWrite(UART0_SPEED_LOW_ID, (unsigned short)uart_speed );
 			lEEPROMRetStatus=SoftEEPROMWrite(UART0_CONFIG_ID, data);
 		} else {
+			if(!module_exists(uart_base-1)) {
+				cmd_print("\r\nUart not initialised. Module %d doesn't exists.", uart_base);
+				return(0);
+			}
 			switch(uart_base) {
 				case 1: { port= (argc==7) ? ustrtoul(argv[6],NULL,0): 1234; save_uart_config(SLAVE_ADDRESS_MODULE1,uart_speed,data,uart_base,port); break;}
 				case 2: { port= (argc==7) ? ustrtoul(argv[6],NULL,0): 2345; save_uart_config(SLAVE_ADDRESS_MODULE2,uart_speed,data,uart_base,port); break;}
 				case 3: { port= (argc==7) ? ustrtoul(argv[6],NULL,0): 3456; save_uart_config(SLAVE_ADDRESS_MODULE3,uart_speed,data,uart_base,port); break;}
 				case 4: { port= (argc==7) ? ustrtoul(argv[6],NULL,0): 4567; save_uart_config(SLAVE_ADDRESS_MODULE4,uart_speed,data,uart_base,port); break;}
-
-				default: {ul_base=UART0_BASE;}
 			}
 			
 		}

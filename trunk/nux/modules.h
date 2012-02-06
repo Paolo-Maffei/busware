@@ -8,6 +8,7 @@
 #include "semphr.h"
 
 #define MODULE1 0x00
+#define MODULE2 0x01
 #define MODULE4 0x03
 
 // Before you amend module_info or uart_profile rewite I2C_write!
@@ -52,7 +53,7 @@ struct uart_info {
 
 void modules_init();
 
-void module1_init();
+void module_init(unsigned short module_idx);
 
 unsigned short module_exists(unsigned short module_idx);
 unsigned short module_profile_id(unsigned short module_idx);

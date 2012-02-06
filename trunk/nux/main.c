@@ -50,9 +50,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "console.h"
 #include "modules.h"
 
-/*-----------------------------------------------------------*/
-static const char * const g_pcHex = "0123456789abcdef";
-
 
 #define mainBASIC_TELNET_STACK_SIZE            ( configMINIMAL_STACK_SIZE * 2 )
 
@@ -67,10 +64,13 @@ static const char * const g_pcHex = "0123456789abcdef";
 #define GPIO_PORTF_DEN_R        (*((volatile unsigned long *)0x4002551C))
 #define GPIO_PORTF_DATA_R       (*((volatile unsigned long *)0x400253FC))
 
+static const char * const g_pcHex = "0123456789abcdef";
+
 /*-----------------------------------------------------------*/
 void console( void *pvParameters );
 static void prvSetupHardware( void ); // configure the hardware
 
+extern void uart_init(unsigned short uart_idx, unsigned long baud, unsigned short config);
 /*-----------------------------------------------------------*/
 
 volatile unsigned short should_reset; // watchdog variable to perform a reboot
@@ -215,31 +215,10 @@ void prvSetupHardware( void ){
     GPIO_PORTF_DEN_R = 0x01;
 
     //
-    // Enable the peripherals used by this example.
-    //
-    SysCtlPeripheralEnable(SYSCTL_PERIPH_UART0);
-    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);
-
-
-	SysCtlPeripheralEnable(SYSCTL_PERIPH_UART1); // init uart 1
-	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOD);
-
-    //
     // Enable processor interrupts.
     //
     IntMasterEnable();
 
-    //
-    // Set GPIO A0 and A1 as UART pins.
-    //
-    GPIOPinTypeUART(GPIO_PORTA_BASE, GPIO_PIN_0 | GPIO_PIN_1);
-
-
-	GPIOPinTypeUART(GPIO_PORTD_BASE, GPIO_PIN_2 | GPIO_PIN_3);
-
-    //
-    // Check to see if an error occurred.
-    //
     if(SoftEEPROMInit(0x1F000, 0x20000, 0x800) != 0)  {
 		LWIPDebug("SoftEEPROM initialisation failed.");
     }
@@ -254,9 +233,8 @@ void prvSetupHardware( void ){
 		uart_speed=115200;
 		data = (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE | UART_CONFIG_PAR_NONE);
 	}
-    UARTConfigSetExpClk(UART0_BASE, SysCtlClockGet(), uart_speed,  data);
 
-
+	uart_init(0, uart_speed, data);
 
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_WDOG0);
 
