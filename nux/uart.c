@@ -54,6 +54,25 @@ __error__(char *pcFilename, unsigned long ulLine)
 //*****************************************************************************
 static const char * const g_pcHex = "0123456789abcdef";
 
+static const unsigned long periph_uart[3] = {
+	SYSCTL_PERIPH_UART0, SYSCTL_PERIPH_UART1, SYSCTL_PERIPH_UART2
+};
+
+static const unsigned long periph_gpio[3] = {
+	SYSCTL_PERIPH_GPIOA, SYSCTL_PERIPH_GPIOD, SYSCTL_PERIPH_GPIOG
+};
+
+static const unsigned long gpio_port[3] = {
+	GPIO_PORTA_BASE, GPIO_PORTD_BASE, GPIO_PORTG_BASE
+};
+
+static const unsigned long gpio_pins[3] = {
+	GPIO_PIN_0 | GPIO_PIN_1, GPIO_PIN_2 | GPIO_PIN_3, GPIO_PIN_0 | GPIO_PIN_1
+};
+
+static const unsigned long uart_base[3] = {
+	UART0_BASE, UART1_BASE, UART2_BASE
+};
 
 //*****************************************************************************
 //
@@ -68,22 +87,21 @@ void UARTSend(unsigned long ulBase, const char *pucBuffer, unsigned short ulCoun
 	}
 }
 
-void UART1IntHandler(void) {
+
+void generic_uart_handler(struct uart_info *uart) {
 	unsigned long ulStatus;
 	portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
-	portCHAR cChar;
-	struct uart_info *uart;
-	uart = get_uart_profile(MODULE1);
+	char data;
 
-	ulStatus = UARTIntStatus(UART1_BASE, true);
+	ulStatus = UARTIntStatus(uart->base, true);
 	// Clear the asserted interrupts.
-	UARTIntClear(UART1_BASE, ulStatus);
+	UARTIntClear(uart->base, ulStatus);
 
 	if( ulStatus & (UART_INT_RX | UART_INT_RT) )     {
-		while (UARTCharsAvail(UART1_BASE)) {
-			cChar = UARTCharGet(UART1_BASE);
+		while (UARTCharsAvail(uart->base)) {
+			data = UARTCharGetNonBlocking(uart->base);
 			uart->recv++;
-			if(errQUEUE_FULL == xQueueSendFromISR( uart->queue, &cChar, &xHigherPriorityTaskWoken )) {
+			if(errQUEUE_FULL == xQueueSendFromISR( uart->queue, &data, &xHigherPriorityTaskWoken )) {
 				uart->lost++;
 			}
 		}
@@ -91,6 +109,43 @@ void UART1IntHandler(void) {
 		uart->err++;
 	}
 }
+
+
+void UART1IntHandler(void) {
+	generic_uart_handler(get_uart_profile(MODULE1));
+}
+
+void UART2IntHandler(void) {
+	generic_uart_handler(get_uart_profile(MODULE2));
+}
+
+void uart_init(unsigned short uart_idx, unsigned long baud, unsigned short config) {
+	SysCtlPeripheralEnable(periph_uart[uart_idx]); // init uart 1
+	SysCtlPeripheralEnable(periph_gpio[uart_idx]);
+	
+	GPIOPinTypeUART(gpio_port[uart_idx], gpio_pins[uart_idx]);
+
+	UARTConfigSetExpClk(uart_base[uart_idx], SysCtlClockGet(), baud, config);
+	switch(uart_idx) {
+		case 1: {
+			UARTFIFOLevelSet(uart_base[uart_idx], UART_FIFO_TX7_8, UART_FIFO_RX7_8);
+			UARTIntRegister(uart_base[uart_idx], UART1IntHandler);
+			IntEnable(INT_UART1);
+		    UARTIntEnable(uart_base[uart_idx], UART_INT_RX | UART_INT_RT | UART_INT_OE);
+			break;
+		}
+		case 2: {
+			UARTFIFOLevelSet(uart_base[uart_idx], UART_FIFO_TX7_8, UART_FIFO_RX7_8);
+			UARTIntRegister(uart_base[uart_idx], UART2IntHandler);
+			IntEnable(INT_UART2);
+		    UARTIntEnable(uart_base[uart_idx], UART_INT_RX | UART_INT_RT | UART_INT_OE);
+			break;
+		}
+
+	}
+
+}
+
 
 //*****************************************************************************
 //

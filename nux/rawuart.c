@@ -67,7 +67,6 @@ void readuart_thread(void *params) {
 		outbuf = (portCHAR *)pvPortMalloc(UART_QUEUE_SIZE);
 		
 		LWIP_DEBUGAPPS("rawuart connection accepted\r\n");
-		UARTRxErrorClear(uart->base);
 	
 		for(;;) {
 			len=0;
