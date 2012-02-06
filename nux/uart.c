@@ -32,6 +32,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "driverlib/uart.h"
 #include "driverlib/debug.h"
 
+#include "modules.h"
+
 //*****************************************************************************
 //
 // The error routine that is called if the driver library encounters an error.
@@ -51,27 +53,6 @@ __error__(char *pcFilename, unsigned long ulLine)
 //
 //*****************************************************************************
 static const char * const g_pcHex = "0123456789abcdef";
-#define WRITE_RETRIES (3)
-
-//*****************************************************************************
-//
-// The UART interrupt handler.
-//
-//*****************************************************************************
-void UART0IntHandler(void) {
-    unsigned long ulStatus;
-
-    //
-    // Get the interrrupt status.
-    //
-    ulStatus = UARTIntStatus(UART0_BASE, true);
-
-    //
-    // Clear the asserted interrupts.
-    //
-    UARTIntClear(UART0_BASE, ulStatus);
-
-}
 
 
 //*****************************************************************************
@@ -87,6 +68,29 @@ void UARTSend(unsigned long ulBase, const char *pucBuffer, unsigned short ulCoun
 	}
 }
 
+void UART1IntHandler(void) {
+	unsigned long ulStatus;
+	portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
+	portCHAR cChar;
+	struct uart_info *uart;
+	uart = get_uart_profile(MODULE1);
+
+	ulStatus = UARTIntStatus(UART1_BASE, true);
+	// Clear the asserted interrupts.
+	UARTIntClear(UART1_BASE, ulStatus);
+
+	if( ulStatus & (UART_INT_RX | UART_INT_RT) )     {
+		while (UARTCharsAvail(UART1_BASE)) {
+			cChar = UARTCharGet(UART1_BASE);
+			uart->recv++;
+			if(errQUEUE_FULL == xQueueSendFromISR( uart->queue, &cChar, &xHigherPriorityTaskWoken )) {
+				uart->lost++;
+			}
+		}
+	} else if(ulStatus & (UART_INT_OE | UART_INT_BE | UART_INT_PE | UART_INT_FE)) {
+		uart->err++;
+	}
+}
 
 //*****************************************************************************
 //
