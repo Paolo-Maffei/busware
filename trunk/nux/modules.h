@@ -11,6 +11,11 @@
 #define MODULE2 0x01
 #define MODULE4 0x03
 
+#define PROFILE_UART 0x22
+#define PROFILE_CRC  0x33
+
+#define MAGIC 0x3A
+
 // Before you amend module_info or uart_profile rewite I2C_write!
 struct module_info {
 	unsigned short magic;

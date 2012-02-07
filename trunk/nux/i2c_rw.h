@@ -10,10 +10,6 @@
 static const unsigned char i2c_addresses[4] = {
 	SLAVE_ADDRESS_MODULE1, SLAVE_ADDRESS_MODULE2, SLAVE_ADDRESS_MODULE3, SLAVE_ADDRESS_MODULE4
 };
-#define PROFILE_UART 0x22
-#define PROFILE_CRC  0x33
-
-#define MAGIC 0x3A
 
 void I2C0_init();
 
