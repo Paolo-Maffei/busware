@@ -27,10 +27,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "inc/hw_types.h"
 #include "inc/hw_memmap.h"
 #include "driverlib/uart.h"
+#include "driverlib/flash.h"
 #include "utils/cmdline.h"
 #include "utils/vstdlib.h"
 #include "softeeprom.h"
 #include "console.h"
+
 #include "i2c_rw.h"
 #include "modules.h"
 #include "crc.h"
@@ -541,6 +543,30 @@ int cmd_restart(int argc, char *argv[]) {
 	return(0);
 }
 
+int cmd_macaddr (int argc, char *argv[]) {
+	unsigned long user0,user1;
+	
+	if (!(argc == 1 || argc == 3)) {
+        cmd_print("Wrong number of arguments\r\n");
+        return(ERROR_UNHANDLED);
+	}
+
+	if (argc == 1) {
+		FlashUserGet(&user0, &user1);
+		if ((user0 == 0xffffffff) || (user1 == 0xffffffff)) {
+			// Mac address range of the NUX family
+			user0 = 0x005550A4;
+			user1 = 0x00000000;
+		}
+		cmd_print("\r\nmac addr: %X %X",user0,user1);
+	} else {
+		user0= ustrtoul(argv[1],NULL,16);
+		user1= ustrtoul(argv[2],NULL,16);
+		FlashUserSet(user0,user1);
+		FlashUserSave();
+	}
+	return (0);
+}
 
 
 void print_uart(struct console_state *hs) {
@@ -565,6 +591,7 @@ cmdline_entry g_sCmdTable[] = {
     { "ipmode", cmd_ipmode, ": set/display ipmode - Usage: ipmode [dhcp|static] [addr mask gateway]" },
     { "uart",   cmd_uartmode, ": set/display uart - uart <id> <speed> <len> <stop> <parity> [port]" },
     { "stats", cmd_stats, ": displays some statistics" },
+	{ "macaddr", cmd_macaddr, ": set/display mac address - macaddr <user1> <user2>"},
     { "test", cmd_test, ": set/display eeprom data - Usage: test <char>" },
     { "quit",   cmd_quit,   "    : Quit console" },
 

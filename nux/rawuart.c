@@ -58,7 +58,7 @@ void readuart_thread(void *params) {
 	netconn_bind(conn, NULL, uart->port);
 
 	/* Tell connection to go into listening mode. */
-	netconn_listen(conn);
+	netconn_listen_with_backlog(conn,1); // resolve uart access if you need more then 1 connection at the time
 
 	while (1) {
 		/* Grab new connection. */
@@ -79,7 +79,6 @@ void readuart_thread(void *params) {
 				err = netconn_write(newconn, outbuf, len, NETCONN_COPY);
 				if(err != ERR_OK) {
 					LWIP_DEBUGAPPS("rawuart netconn_write err: %d\r\n",err);
-
 					goto finish;
 				}
 			}
@@ -88,7 +87,7 @@ void readuart_thread(void *params) {
 			if (buf != NULL) {
 				do {
 					netbuf_data(buf, (void *)&inbuf, &len);
-					UARTSend(uart->base,inbuf,len);
+					UARTSend(uart->base,inbuf,len); // this is blocking until all characters have been sent, consider buffering if it's too slow
 					uart->sent += len;
 				} while (netbuf_next(buf) > 0); // read all data
 				netbuf_delete(buf);

@@ -301,7 +301,7 @@ void telnetd_init(void) {
 
 		err = tcp_bind(pcb, IP_ADDR_ANY, 23);
 		if (err == ERR_OK)   {
-			pcb = tcp_listen(pcb);
+			pcb = tcp_listen_with_backlog(pcb,1); // only 1 connection at the time, resolve extern struct console_state *cmd_out if you need more
 			tcp_accept(pcb, telnet_accept);
 		}
 	}
