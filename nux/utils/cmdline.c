@@ -16,8 +16,9 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 *************************************************************************/
 
-#include <string.h>
+
 #include "utils/cmdline.h"
+#include "utils/vstdlib.h"
 
 //*****************************************************************************
 //
@@ -71,7 +72,7 @@ int cmdline_process(char *pcCmdLine) {
         pCmdEntry = &g_sCmdTable[0];
 
         while(pCmdEntry->cmd)  {
-            if(!strcmp(argv[0], pCmdEntry->cmd)) {
+            if(!ustrncmp(argv[0], pCmdEntry->cmd,ustrlen(pCmdEntry->cmd))) {
                 return(pCmdEntry->pfnCmd(argc, argv));
             }
 

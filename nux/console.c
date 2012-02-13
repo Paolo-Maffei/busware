@@ -15,8 +15,6 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 *************************************************************************/
-#include "stdlib.h"
-#include <string.h>
 
 /* Scheduler includes. */
 #include "FreeRTOS.h"
@@ -26,6 +24,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include "inc/hw_types.h"
 #include "inc/hw_memmap.h"
+
+#include "lwip/netif.h"
+
 #include "driverlib/uart.h"
 #include "driverlib/flash.h"
 #include "utils/cmdline.h"
@@ -33,9 +34,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "softeeprom.h"
 #include "console.h"
 
+#include "LWIPStack.h"
 #include "i2c_rw.h"
 #include "modules.h"
 #include "crc.h"
+#include "relay.h"
 
 extern void UARTSend(unsigned long ulBase, const char *pucBuffer, unsigned short ulCount);
 extern int UARTgets(unsigned long ulBase, char *pcBuf, unsigned long ulLen);
@@ -172,6 +175,7 @@ int cmd_clear(int argc, char *argv[]) {
 int cmd_stats(int argc, char *argv[]) {
 	struct uart_info *uart_config;
 	struct crc_info *crc_config;
+	struct relay_info *relay_config;
 	char buf[3];
 	
 	for(size_t i = MODULE1; i <= MODULE4; i++)	{
@@ -190,6 +194,11 @@ int cmd_stats(int argc, char *argv[]) {
 						cmd_print("\r\nmodule id: %d profile: %s crc: %X crc2: %X", i, "crc error", crc_config->crc,crc_config->crc2);
 						
 						break;}
+					case PROFILE_RELAY: {
+						relay_config = get_relay_profile(i);
+						cmd_print("\r\nmodule id: %d profile: %s start_value: %d negation: %d convert: %d", i, "relay", relay_config->start_value, relay_config->negation, relay_config->convert);
+						break;
+					}
 			};
 		} else {
 			cmd_print("\r\nmodule id: %d not available", i);
@@ -198,10 +207,31 @@ int cmd_stats(int argc, char *argv[]) {
 	return(0);
 }
 
-int cmd_test(int argc, char *argv[]) {
-	struct module_info *header;
-	struct uart_profile *profile;
 
+int cmd_relay(int argc, char *argv[]) {
+	unsigned char pin,value;
+	unsigned short module;
+	
+	module = MODULE1;
+	if(!(module_exists(module) && (module_profile_id(module) == PROFILE_RELAY))) {
+		cmd_print("No relay available.");
+		return(0);
+	}
+
+	if (argc == 2) {
+		pin = ustrtoul(argv[1],NULL,0);
+		cmd_print("\r\nrelay module: %d pin: %d value: %d",module,pin, relay_read(module,pin));
+
+	} else if (argc == 3) {
+		pin = ustrtoul(argv[1],NULL,0);
+		value = ustrtoul(argv[2],NULL,16);
+		relay_write(module,pin,value);
+	}
+	return(0);
+}
+
+int cmd_module(int argc, char *argv[]) {
+	struct module_info *header;
 	
 	header = (struct module_info *)pvPortMalloc(sizeof(struct module_info));
 	
@@ -213,8 +243,8 @@ int cmd_test(int argc, char *argv[]) {
 			header->vendor  = 0x01;
 			header->product = 0x01;
 			header->version = 0x01;
-			header->profile = 0x22;
-			header->modres  = 0xFF;
+			header->profile = ustrtoul(argv[2],NULL,16);
+			header->modres  = ustrtoul(argv[3],NULL,16);
 			header->dummy2  = 0;
 			header->crc     = crcSlow((unsigned char *)header, sizeof(struct module_info)-sizeof(header->crc));
 			
@@ -224,14 +254,6 @@ int cmd_test(int argc, char *argv[]) {
 		I2C_read(SLAVE_ADDRESS_MODULE1, (unsigned char *) header, sizeof(struct module_info), 0);
 		cmd_print("\r\ni2c module magic: %X vendor: %X product: %X version: %X profile: %X modres: %X", header->magic, header->vendor, header->product, header->version, header->profile, header->modres);
 
-		if(header->profile == 0x22) {
-			profile = (struct uart_profile *)pvPortMalloc(sizeof(struct uart_profile));
-			
-			I2C_read(SLAVE_ADDRESS_MODULE1, (unsigned char *) profile, sizeof(struct uart_profile), sizeof(struct module_info));
-			
-			cmd_print("\r\nuart 1 speed: %d config: %X port: %d", profile->baud, profile->config, profile->port);
-			vPortFree(profile);
-		}
 
 	}
 
@@ -249,6 +271,7 @@ int cmd_static_ipaddr(int argc, char *argv[]) {
 	tBoolean found;
     long lEEPROMRetStatus;
     unsigned short usdata,usdata2;
+	char *param;
 
 	if (argc < 2) {
 	    lEEPROMRetStatus = SoftEEPROMRead(STATIC_IPADDR_LOW_ID, &usdata, &found);
@@ -272,32 +295,35 @@ int cmd_static_ipaddr(int argc, char *argv[]) {
 		}
 		cmd_print("\r\nNo static ip address stored.");
 	} else if (argc == 5){
-	    usdata2 = atoi(strtok(argv[2],".")) << 8;
-	    usdata2 |= atoi(strtok(NULL,"."));
+		param = argv[2];
+	    usdata2 = ustrtoul(param,&param,0) << 8;
+	    usdata2 |= ustrtoul(param+1,&param,0);
 	    lEEPROMRetStatus = SoftEEPROMWrite(STATIC_IPADDR_HIGH_ID, usdata2);
 
 	    if(lEEPROMRetStatus != 0) {
 	        cmd_print("\rAn error occurred during a soft EEPROM write operation");
 	        return output_error(lEEPROMRetStatus);
 	    }
-	    usdata2 = atoi(strtok(NULL,".")) << 8;
-	    usdata2 |= atoi(strtok(NULL,""));
+	    usdata2 = ustrtoul(param+1,&param,0) << 8;
+	    usdata2 |= ustrtoul(param+1,&param,0);
 	    SoftEEPROMWrite(STATIC_IPADDR_LOW_ID, usdata2);
 
-	    usdata2 = atoi(strtok(argv[3],".")) << 8;
-	    usdata2 |= atoi(strtok(NULL,"."));
+		param=argv[3];
+	    usdata2 = ustrtoul(param+1,&param,0) << 8;
+	    usdata2 |= ustrtoul(param+1,&param,0);
 	    SoftEEPROMWrite(STATIC_IPMASK_HIGH_ID, usdata2);
 
-	    usdata2 = atoi(strtok(NULL,".")) << 8;
-	    usdata2 |= atoi(strtok(NULL,""));
+	    usdata2 = ustrtoul(param+1,&param,0) << 8;
+	    usdata2 |= ustrtoul(param+1,&param,0);
 	    SoftEEPROMWrite(STATIC_IPMASK_LOW_ID, usdata2);
 
-	    usdata2 = atoi(strtok(argv[4],".")) << 8;
-	    usdata2 |= atoi(strtok(NULL,"."));
+		param=argv[4];
+	    usdata2 = ustrtoul(param+1,&param,0) << 8;
+	    usdata2 |= ustrtoul(param+1,&param,0);
 	    SoftEEPROMWrite(STATIC_IPGW_HIGH_ID, usdata2);
 
-	    usdata2 = atoi(strtok(NULL,".")) << 8;
-	    usdata2 |= atoi(strtok(NULL,""));
+	    usdata2 = ustrtoul(param+1,&param,0) << 8;
+	    usdata2 |= ustrtoul(param+1,&param,0);
 	    SoftEEPROMWrite(STATIC_IPGW_LOW_ID, usdata2);
 
 	} else {
@@ -311,6 +337,7 @@ int cmd_ipmode(int argc, char *argv[]) {
 	tBoolean found;
     long lEEPROMRetStatus;
     unsigned short usdata;
+	struct netif *lwip_netif;
 	
 	if (argc < 2) {
 	    lEEPROMRetStatus = SoftEEPROMRead(IPMODE_ID, &usdata, &found);
@@ -320,10 +347,12 @@ int cmd_ipmode(int argc, char *argv[]) {
 	        return output_error(lEEPROMRetStatus);
 	    }
 		usdata = found ? usdata : 1;
-		cmd_print("ip mode : %s", usdata == 1 ? "dhcp" : "static");
-		if(usdata == 0) {
-			argv[0] = "ipaddr";
-			cmd_static_ipaddr(1,argv);
+		cmd_print("ip mode: %s ", usdata == 1 ? "dhcp" : "static");
+		lwip_netif = get_actual_netif();
+		if(netif_is_up(lwip_netif)) {
+			cmd_print(" ip addr: %d.%d.%d.%d mask: %d.%d.%d.%d gateway: %d.%d.%d.%d \r\n", ip4_addr1(&lwip_netif->ip_addr), ip4_addr2(&lwip_netif->ip_addr), ip4_addr3(&lwip_netif->ip_addr), ip4_addr4(&lwip_netif->ip_addr), ip4_addr1(&lwip_netif->netmask), ip4_addr2(&lwip_netif->netmask), ip4_addr3(&lwip_netif->netmask), ip4_addr4(&lwip_netif->netmask), ip4_addr1(&lwip_netif->gw), ip4_addr2(&lwip_netif->gw), ip4_addr3(&lwip_netif->gw), ip4_addr4(&lwip_netif->gw));
+		} else {
+			cmd_print(" network link is down.\r\n");
 		}
 	} else {
 		if(ustrncmp(argv[1],"dhcp",4) == 0)	{
@@ -545,8 +574,9 @@ int cmd_restart(int argc, char *argv[]) {
 
 int cmd_macaddr (int argc, char *argv[]) {
 	unsigned long user0,user1;
-	
-	if (!(argc == 1 || argc == 3)) {
+	char *param;
+		
+	if (!(argc == 1 || argc == 2)) {
         cmd_print("Wrong number of arguments\r\n");
         return(ERROR_UNHANDLED);
 	}
@@ -558,12 +588,26 @@ int cmd_macaddr (int argc, char *argv[]) {
 			user0 = 0x005550A4;
 			user1 = 0x00000000;
 		}
-		cmd_print("\r\nmac addr: %X %X",user0,user1);
+		cmd_print("\r\nmac addr: %x:%x:%x:%x:%x:%x", ((user0 >> 0) & 0xff), ((user0 >> 8) & 0xff),((user0 >> 16) & 0xff), ((user1 >> 0) & 0xff), ((user1 >> 8) & 0xff),((user1 >> 16) & 0xff));
 	} else {
-		user0= ustrtoul(argv[1],NULL,16);
-		user1= ustrtoul(argv[2],NULL,16);
-		FlashUserSet(user0,user1);
-		FlashUserSave();
+		FlashUserGet(&user0, &user1);
+		//Remember once committed the values in the user0 and user1 registers cannot be changed or reset. 
+		if ((user0 == 0xffffffff) || (user1 == 0xffffffff)) {
+			param=argv[1];
+			user0=0;
+			user1=0;
+			user0 |= ((ustrtoul(param,&param,16) <<0 ) & 0x000000ff);
+			user0 |= ((ustrtoul(param+1,&param,16) <<8 ) & 0x0000ff00);
+			user0 |= ((ustrtoul(param+1,&param,16) <<16 ) & 0x00ff0000);
+			user1 |= ((ustrtoul(param+1,&param,16) <<0 ) & 0x000000ff);
+			user1 |= ((ustrtoul(param+1,&param,16) <<8 ) & 0x0000ff00);
+			user1 |= ((ustrtoul(param+1,NULL,16) <<16 ) & 0x00ff0000);
+
+			FlashUserSet(user0,user1);
+			FlashUserSave();
+		} else {
+			cmd_print("You can set macaddr only one time.");
+		}
 	}
 	return (0);
 }
@@ -591,8 +635,9 @@ cmdline_entry g_sCmdTable[] = {
     { "ipmode", cmd_ipmode, ": set/display ipmode - Usage: ipmode [dhcp|static] [addr mask gateway]" },
     { "uart",   cmd_uartmode, ": set/display uart - uart <id> <speed> <len> <stop> <parity> [port]" },
     { "stats", cmd_stats, ": displays some statistics" },
-	{ "macaddr", cmd_macaddr, ": set/display mac address - macaddr <user1> <user2>"},
-    { "test", cmd_test, ": set/display eeprom data - Usage: test <char>" },
+	{ "macaddr", cmd_macaddr, ": set/display mac address - macaddr <xx:xx:xx:xx:xx:xx>"},
+    { "module", cmd_module, ": set/display eeprom data - Usage: module [read|write]" },
+    { "relay", cmd_relay, ": set/display relay pins - Usage: relay <pin> <value>" },
     { "quit",   cmd_quit,   "    : Quit console" },
 
     { 0, 0, 0 }

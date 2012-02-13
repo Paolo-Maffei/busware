@@ -263,7 +263,7 @@ int uvsnprintf(char * buf, size_t n, const char * fmt, va_list args) {
 	        }
 	        EMIT('\0');
 	        return str-buf;
-	}
+}
 
 int usprintf(char *pcBuf, const char *pcString, ...){
     va_list vaArgP;

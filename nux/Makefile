@@ -3,7 +3,7 @@
 #	
 #*/
 
-SFLASH=/Users/mueck/dev/StellarisWare/tools/sflash/sflash.exe
+SFLASH=sflash
 TTY=/dev/tty.SLAB_USBtoUART
 RTOS_SOURCE_DIR=FreeRTOS/Source
 LWIP_SOURCE_DIR=lwip-1.3.2
@@ -49,6 +49,8 @@ SOURCE=	main.c \
 		console.c \
 		i2c_rw.c \
 		modules.c \
+		relay.c \
+		web.c \
 		softeeprom/softeeprom.c \
 		utils/vstdlib.c \
 		utils/cmdline.c \
@@ -106,9 +108,11 @@ OBJS = $(SOURCE:.c=.o)
 #
 CFLAGS+=${patsubst %,-I%,${subst :, ,${IPATH}}}
 
+.PHONY: all
 all: nux.bin
 	 
 
+.PHONY: flash
 flash: all
 	$(SFLASH) -c $(TTY) -b 115200 -p 0x1000 -d nux.bin
 
@@ -121,6 +125,7 @@ nux.axf : $(OBJS) Makefile
 $(OBJS) : %.o : %.c Makefile FreeRTOSConfig.h
 	$(CC) -c $(CFLAGS) $< -o $@
 
+.PHONY: clean
 clean :
 	touch Makefile
 	rm -f $(OBJS)
@@ -128,7 +133,4 @@ clean :
 	rm  -f *.bin
 	rm  -f *.axf
 	rm  -f *.elf
-
-
-
 

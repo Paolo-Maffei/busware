@@ -22,16 +22,16 @@
  ---------- Memory options ----------
 *****************************************************************************/
 #define MEM_ALIGNMENT                   4           // default is 1
-#define MEM_SIZE                        (10 * 1024)  // default is 1600, was 16K
-#define MEMP_SANITY_CHECK               1
+#define MEM_SIZE                        (7 * 1024)  // default is 1600, was 16K
+#define MEMP_SANITY_CHECK               0
 
 /*****************************************************************************
  ---------- Internal Memory Pool Sizes ----------
 *****************************************************************************/
-#define MEMP_NUM_PBUF                     16    // Default 16, was 16
+#define MEMP_NUM_PBUF                     5    // Default 16, was 16
 #define MEMP_NUM_TCP_PCB                  5    // Default 5, was 12
 #define MEMP_NUM_SYS_TIMEOUT              10
-#define PBUF_POOL_SIZE                    16    // Default 16, was 36
+#define PBUF_POOL_SIZE                    36    // Default 16, was 36
 
 /*****************************************************************************
  ---------- ARP options ----------
@@ -46,8 +46,8 @@
 *****************************************************************************/
 #define IP_FORWARD                      0
 #define IP_OPTIONS_ALLOWED              1
-#define IP_REASSEMBLY                   1           // default is 1
-#define IP_FRAG                         1           // default is 1
+#define IP_REASSEMBLY                   0           // default is 1
+#define IP_FRAG                         0           // default is 1
 #define IP_DEFAULT_TTL                  255
 
 /*****************************************************************************
@@ -180,8 +180,8 @@ extern void LWIPDebug(const char *pcString, ...);
 #define IP_DEBUG                        LWIP_DBG_OFF     // default is OFF
 #define IP_REASS_DEBUG                 LWIP_DBG_OFF
 #define RAW_DEBUG                      LWIP_DBG_OFF
-#define MEM_DEBUG                      LWIP_DBG_OFF
-#define MEMP_DEBUG                     LWIP_DBG_OFF
+#define MEM_DEBUG                      LWIP_DBG_ON
+#define MEMP_DEBUG                     LWIP_DBG_ON
 #define SYS_DEBUG                      LWIP_DBG_OFF
 #define TCP_DEBUG                      LWIP_DBG_OFF
 #define TCP_INPUT_DEBUG                LWIP_DBG_OFF
@@ -189,7 +189,7 @@ extern void LWIPDebug(const char *pcString, ...);
 #define TCP_RTO_DEBUG                  LWIP_DBG_OFF
 #define TCP_CWND_DEBUG                 LWIP_DBG_OFF
 #define TCP_WND_DEBUG                  LWIP_DBG_OFF
-#define TCP_OUTPUT_DEBUG               LWIP_DBG_OFF
+#define TCP_OUTPUT_DEBUG               LWIP_DBG_ON
 #define TCP_RST_DEBUG                  LWIP_DBG_OFF
 #define TCP_QLEN_DEBUG                 LWIP_DBG_OFF
 #define UDP_DEBUG                       LWIP_DBG_OFF     // default is OFF

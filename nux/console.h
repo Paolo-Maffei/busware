@@ -39,6 +39,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define UART0_CONFIG_ID				(9)
 
 void console_init(void);
+int cmd_print(const char *pcString, ...);
 
 #define TELNETD_CONF_LINELEN 120
 #define TELNETD_CONF_NUMLINES 16
