@@ -52,6 +52,7 @@
 #include "rawuart.h"
 #include "modules.h"
 #include "i2c_rw.h"
+#include "web.h"
 #include "ETHIsr.h"
 #include "LWIPStack.h"
 
@@ -78,6 +79,11 @@ extern int blinky(unsigned int count);
 //
 //*****************************************************************************
 static struct netif lwip_netif;
+
+
+struct netif *get_actual_netif() {
+	return &lwip_netif;
+}
 
 //*****************************************************************************
 //
@@ -534,6 +540,7 @@ void LWIPServiceTaskInit(void *pvParameters) {
 	struct ip_addr net_mask;
 	struct ip_addr gw_addr;
 	struct uart_info *profile;
+	unsigned short start_web;
 	
 	LWIP_ASSERT("pvParameters != NULL", (pvParameters != NULL));
 
@@ -614,13 +621,21 @@ void LWIPServiceTaskInit(void *pvParameters) {
 	}
 
 	blinky(2);
+	start_web=0;
 	for(size_t i = MODULE1; i <= MODULE4; i++)	{
-		if(module_exists(i) && (module_profile_id(i) == PROFILE_UART)) {
-			profile = get_uart_profile(i);
-			rawuart_init(profile->port,profile);
+		if(module_exists(i)) {
+			if (module_profile_id(i) == PROFILE_UART) {
+				profile = get_uart_profile(i);
+				rawuart_init(profile->port,profile);
+			} else if (module_profile_id(i) == PROFILE_RELAY) {
+				start_web = 1;
+			}
 		}
 	}
 	telnetd_init();
+	if(start_web) {
+		web_init(80);
+	}
 }
 
 //*****************************************************************************

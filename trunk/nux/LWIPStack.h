@@ -38,6 +38,8 @@ typedef struct
 //*****************************************************************************
 extern void LWIPServiceTaskInit(void *pvParameters);
 
+struct netif *get_actual_netif();
+
 #if NETIF_DEBUG
 void stellarisif_debug_print(struct pbuf *p);
 #else

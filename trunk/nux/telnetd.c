@@ -22,7 +22,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "semphr.h"
 #include "arch/cc.h"
 
-#include <string.h>
 
 #include "lwip/debug.h"
 #include "lwip/stats.h"
@@ -41,6 +40,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 extern const portCHAR * const prompt;
 extern const portCHAR * const welcome;
 
+extern struct console_state *cmd_out;
+
 const portCHAR * const UNKNOWN_COMMAND = "Unknown command\n";
 const portCHAR * const TOO_MANY_ARGS ="Too many arguments for command processor!\n";
 
@@ -56,16 +57,45 @@ struct telnet_state {
   char line[TELNETD_CONF_LINELEN];
 };
 
-void print_tcp(struct console_state *hs,struct tcp_pcb *pcb) {
-	int i;
-//TODO: check free send buffer	
-	for(i=0;i<=hs->line;i++) {
-		tcp_write(pcb, hs->lines[i], strlen(hs->lines[i]), 1);
-		vPortFree(hs->lines[i]);
-	}
-	hs->line=-1;
-}
 
+static void send_data(struct tcp_pcb *pcb, struct telnet_state *es) {
+	err_t err;
+	u16_t len,i;
+	u8_t has_data;
+	
+	if(cmd_out->line > -1) {
+		len = tcp_sndbuf(pcb);
+		has_data = 0;
+		for(i=0;i<=cmd_out->line;i++) {
+			if(cmd_out->lines[i] == NULL) {
+				continue;
+			}
+			
+			if(ustrlen(cmd_out->lines[i]) < len) {
+				err = tcp_write(pcb, cmd_out->lines[i], ustrlen(cmd_out->lines[i]), 1);
+				if(err == ERR_MEM) {
+					break;
+				}
+				has_data = 1;
+				len -= ustrlen(cmd_out->lines[i]);
+			
+				vPortFree(cmd_out->lines[i]);
+				cmd_out->lines[i] = NULL;
+
+			} else {
+				break;
+			}
+		};
+
+		if (has_data) {
+			tcp_output(pcb);
+		}
+		if(cmd_out->lines[cmd_out->line] == NULL) {
+			cmd_out->line=-1;
+		}
+	}
+
+}
 
 void telnet_error(void *arg, err_t err) {
   struct telnet_state *es;
@@ -88,8 +118,52 @@ void telnet_close(struct tcp_pcb *tpcb, struct telnet_state *es) {
 	if (es != NULL) {
 		vPortFree(es);
 	}
+	if(cmd_out != NULL) {
+		vPortFree(cmd_out);
+	}
 
 	tcp_close(tpcb);
+}
+
+static err_t telnet_poll(void *arg, struct tcp_pcb *pcb){
+        struct telnet_state *hs;
+        
+        hs = arg;
+
+        if ((hs == NULL) && (pcb->state == ESTABLISHED)) {
+                tcp_abort(pcb);
+                return ERR_ABRT;
+        } else if(pcb->state == CLOSE_WAIT){
+                telnet_close(pcb,hs);
+                tcp_abort(pcb);
+                return ERR_ABRT;
+        }
+
+        send_data(pcb, hs);
+        
+        return ERR_OK;
+}
+
+static err_t telnet_sent(void *arg, struct tcp_pcb *pcb, u16_t len) {
+  struct telnet_state *hs;
+
+  LWIP_UNUSED_ARG(len);
+
+  if(!arg) {
+    return ERR_OK;
+  }
+
+  hs = arg;
+
+  /* Temporarily disable send notifications */
+  tcp_sent(pcb, NULL);
+
+  send_data(pcb, hs);
+
+  /* Reenable notifications. */
+  tcp_sent(pcb, telnet_sent);
+
+  return ERR_OK;
 }
 
 #define STATE_NORMAL 0
@@ -184,7 +258,7 @@ void read_iac(char * dataptr, int len,struct tcp_pcb *tpcb) {
 err_t telnet_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t err) {
 	char *data;
 	char *dest;
-	extern struct console_state *cmd_out;
+
 	int cmd_status;
  	struct telnet_state *es;
 
@@ -232,29 +306,22 @@ err_t telnet_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t err) {
 			*dest='\0';
 		}
 		
-		cmd_out = (struct console_state *)pvPortMalloc(sizeof(struct console_state));
-		cmd_out->line=-1;
         //
         // Pass the line from the user to the command processor.  It will be
         // parsed and valid commands executed.
         //
         cmd_status = cmdline_process(es->line);
 
-		print_tcp(cmd_out,tpcb);
-		vPortFree(cmd_out);
 
         if(cmd_status == CMDLINE_BAD_CMD)  {
-			err = tcp_write(tpcb, UNKNOWN_COMMAND, ustrlen(UNKNOWN_COMMAND), 0);
+			cmd_print(UNKNOWN_COMMAND);
 		} else if(cmd_status == CMDLINE_TOO_MANY_ARGS) {
-			err = tcp_write(tpcb, TOO_MANY_ARGS, ustrlen(TOO_MANY_ARGS), 0);
+			cmd_print(TOO_MANY_ARGS);
         }
 
 
-		err = tcp_write(tpcb, prompt, ustrlen(prompt), 0);
-
-		if(err == ERR_OK) {
-			tcp_output(tpcb);
-		}
+		cmd_print(prompt);
+		send_data(tpcb,es);
 		es->line[0] = (char)0;
 		
 		if (cmd_status == CMDLINE_QUIT) {
@@ -274,12 +341,17 @@ err_t telnet_accept(void *arg, struct tcp_pcb *tpcb, err_t err) {
 	
 	es = (struct telnet_state *)pvPortMalloc(sizeof(struct telnet_state));
   	if (es != NULL)   {
+		cmd_out = (struct console_state *)pvPortMalloc(sizeof(struct console_state));
+		cmd_out->line=-1;
+	
 		es->state = ES_ACCEPTED;
 		/* pass newly allocated es to our callbacks */
 	    tcp_arg(tpcb, es);
 		tcp_err(tpcb, telnet_error);
 		tcp_recv(tpcb, telnet_recv);
-
+		tcp_sent(tpcb, telnet_sent);
+		tcp_poll(tpcb, telnet_poll,5);
+		
 		err = tcp_write(tpcb, welcome, ustrlen(welcome), 0);
 		if(err == ERR_OK) {
 			tcp_output(tpcb);
