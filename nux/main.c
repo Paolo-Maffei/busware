@@ -237,7 +237,10 @@ void prvSetupHardware( void ){
 	uart_init(0, uart_speed, data);
 
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_WDOG0);
+	
+	IntPriorityGroupingSet(4);
 
+	IntPrioritySet(INT_WATCHDOG,SET_SYSCALL_INTERRUPT_PRIORITY(5));
     IntEnable(INT_WATCHDOG); // Enable the watchdog interrupt.
     WatchdogReloadSet(WATCHDOG0_BASE, SysCtlClockGet());
     WatchdogResetEnable(WATCHDOG0_BASE);
