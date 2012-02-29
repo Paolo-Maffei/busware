@@ -143,6 +143,7 @@ int cmd_quit(int argc, char *argv[]) {
 	
 	return CMDLINE_QUIT;
 }
+
 /*****************************************************************************
 
 ! Implements the clear command.
@@ -158,6 +159,7 @@ int cmd_quit(int argc, char *argv[]) {
 ! value indicates a failure.
 
 *****************************************************************************/
+#ifdef MAINT
 int cmd_clear(int argc, char *argv[]) {
     long lEEPROMRetStatus;
     lEEPROMRetStatus = SoftEEPROMClear();
@@ -168,7 +170,7 @@ int cmd_clear(int argc, char *argv[]) {
     }
     return(0);
 }
-
+#endif
 
 /* This function prints out some module stats
 */
@@ -207,7 +209,7 @@ int cmd_stats(int argc, char *argv[]) {
 	return(0);
 }
 
-
+#ifdef MAINT
 int cmd_relay(int argc, char *argv[]) {
 	unsigned char pin,value;
 	unsigned short module;
@@ -260,6 +262,7 @@ int cmd_module(int argc, char *argv[]) {
 	vPortFree(header);
 	return(0);
 }
+#endif
 
 /*
  Implements the ip address command.
@@ -572,6 +575,7 @@ int cmd_restart(int argc, char *argv[]) {
 	return(0);
 }
 
+#ifdef MAINT
 int cmd_macaddr (int argc, char *argv[]) {
 	unsigned long user0,user1;
 	char *param;
@@ -611,7 +615,7 @@ int cmd_macaddr (int argc, char *argv[]) {
 	}
 	return (0);
 }
-
+#endif
 
 void print_uart(struct console_state *hs) {
 	int i;
@@ -630,14 +634,16 @@ void print_uart(struct console_state *hs) {
 //*****************************************************************************
 cmdline_entry g_sCmdTable[] = {
     { "help",   cmd_help,      " : Display list of commands" },
+#ifdef MAINT
     { "clear",  cmd_clear,  "    : Reset soft EEPROM - Usage: clear" },
+	{ "macaddr", cmd_macaddr, ": set/display mac address - macaddr <xx:xx:xx:xx:xx:xx>"},
+    { "module", cmd_module, ": set/display eeprom data - Usage: module [read|write]" },
+    { "relay", cmd_relay, ": set/display relay pins - Usage: relay <pin> <value>" },
+#endif
     { "restart",  cmd_restart,  "    : Restart software  - Usage: restart" },
     { "ipmode", cmd_ipmode, ": set/display ipmode - Usage: ipmode [dhcp|static] [addr mask gateway]" },
     { "uart",   cmd_uartmode, ": set/display uart - uart <id> <speed> <len> <stop> <parity> [port]" },
     { "stats", cmd_stats, ": displays some statistics" },
-	{ "macaddr", cmd_macaddr, ": set/display mac address - macaddr <xx:xx:xx:xx:xx:xx>"},
-    { "module", cmd_module, ": set/display eeprom data - Usage: module [read|write]" },
-    { "relay", cmd_relay, ": set/display relay pins - Usage: relay <pin> <value>" },
     { "quit",   cmd_quit,   "    : Quit console" },
 
     { 0, 0, 0 }

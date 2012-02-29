@@ -621,6 +621,7 @@ void LWIPServiceTaskInit(void *pvParameters) {
 	}
 
 	blinky(2);
+#ifndef MAINT
 	start_web=0;
 	for(size_t i = MODULE1; i <= MODULE4; i++)	{
 		if(module_exists(i)) {
@@ -632,10 +633,11 @@ void LWIPServiceTaskInit(void *pvParameters) {
 			}
 		}
 	}
-	telnetd_init();
 	if(start_web) {
 		web_init(80);
 	}
+#endif
+	telnetd_init();
 }
 
 //*****************************************************************************

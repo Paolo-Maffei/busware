@@ -23,7 +23,7 @@
 *****************************************************************************/
 #define MEM_ALIGNMENT                   4           // default is 1
 #define MEM_SIZE                        (7 * 1024)  // default is 1600, was 16K
-#define MEMP_SANITY_CHECK               0
+#define MEMP_SANITY_CHECK               1
 
 /*****************************************************************************
  ---------- Internal Memory Pool Sizes ----------
@@ -31,7 +31,6 @@
 #define MEMP_NUM_PBUF                     5    // Default 16, was 16
 #define MEMP_NUM_TCP_PCB                  5    // Default 5, was 12
 #define MEMP_NUM_SYS_TIMEOUT              10
-#define PBUF_POOL_SIZE                    36    // Default 16, was 36
 
 /*****************************************************************************
  ---------- ARP options ----------
@@ -77,12 +76,7 @@
 /*****************************************************************************
  ---------- TCP options ----------
 *****************************************************************************/
-#define TCP_TTL                         (IP_DEFAULT_TTL)
-#define TCP_WND                         2048   // default is 2048
-#define TCP_MSS                        128        // default is 128
-#define TCP_SND_BUF                     (4 * TCP_MSS)
-                                                    // default is 256, was 6 *
-
+#define TCP_SND_QUEUELEN                8
 /*****************************************************************************
  ---------- Pbuf options ----------
 *****************************************************************************/
@@ -120,7 +114,7 @@
  ---------- Statistics options ----------
 *****************************************************************************/
 #define LWIP_STATS                      1
-#define LWIP_STATS_DISPLAY              0
+#define LWIP_STATS_DISPLAY              1
 #define LINK_STATS                      1
 #define ETHARP_STATS                    (LWIP_ARP)
 #define IP_STATS                        1
@@ -159,9 +153,8 @@ extern void LWIPDebug(const char *pcString, ...);
 #define LWIP_DEBUG						1
 
 
-//#define LWIP_DBG_MIN_LEVEL              LWIP_DBG_LEVEL_OFF
-//#define LWIP_DBG_MIN_LEVEL              LWIP_DBG_LEVEL_OFF
-#define LWIP_DBG_MIN_LEVEL              LWIP_DBG_LEVEL_WARNING
+#define LWIP_DBG_MIN_LEVEL              LWIP_DBG_LEVEL_OFF
+//#define LWIP_DBG_MIN_LEVEL              LWIP_DBG_LEVEL_WARNING
 //#define LWIP_DBG_MIN_LEVEL              LWIP_DBG_LEVEL_SERIOUS
 //#define LWIP_DBG_MIN_LEVEL              LWIP_DBG_LEVEL_SEVERE
 
@@ -180,8 +173,8 @@ extern void LWIPDebug(const char *pcString, ...);
 #define IP_DEBUG                        LWIP_DBG_OFF     // default is OFF
 #define IP_REASS_DEBUG                 LWIP_DBG_OFF
 #define RAW_DEBUG                      LWIP_DBG_OFF
-#define MEM_DEBUG                      LWIP_DBG_ON
-#define MEMP_DEBUG                     LWIP_DBG_ON
+#define MEM_DEBUG                      LWIP_DBG_OFF
+#define MEMP_DEBUG                     LWIP_DBG_OFF
 #define SYS_DEBUG                      LWIP_DBG_OFF
 #define TCP_DEBUG                      LWIP_DBG_OFF
 #define TCP_INPUT_DEBUG                LWIP_DBG_OFF
@@ -189,7 +182,7 @@ extern void LWIPDebug(const char *pcString, ...);
 #define TCP_RTO_DEBUG                  LWIP_DBG_OFF
 #define TCP_CWND_DEBUG                 LWIP_DBG_OFF
 #define TCP_WND_DEBUG                  LWIP_DBG_OFF
-#define TCP_OUTPUT_DEBUG               LWIP_DBG_ON
+#define TCP_OUTPUT_DEBUG               LWIP_DBG_OFF
 #define TCP_RST_DEBUG                  LWIP_DBG_OFF
 #define TCP_QLEN_DEBUG                 LWIP_DBG_OFF
 #define UDP_DEBUG                       LWIP_DBG_OFF     // default is OFF
@@ -201,5 +194,6 @@ extern void LWIPDebug(const char *pcString, ...);
 #define SNMP_MSG_DEBUG                 LWIP_DBG_OFF
 #define SNMP_MIB_DEBUG                 LWIP_DBG_OFF
 #define DNS_DEBUG                      LWIP_DBG_OFF
+#define MY_DEBUG                      LWIP_DBG_OFF
 
 #endif /* __LWIPOPTS_H__ */

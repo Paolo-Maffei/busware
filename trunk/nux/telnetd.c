@@ -45,6 +45,8 @@ extern struct console_state *cmd_out;
 const portCHAR * const UNKNOWN_COMMAND = "Unknown command\n";
 const portCHAR * const TOO_MANY_ARGS ="Too many arguments for command processor!\n";
 
+int accept;
+
 enum telnet_states {
   ES_NONE = 0,
   ES_ACCEPTED,
@@ -106,6 +108,8 @@ void telnet_error(void *arg, err_t err) {
   if (es != NULL) {
     vPortFree(es);
   }
+
+	accept--;
 }
 
 void telnet_close(struct tcp_pcb *tpcb, struct telnet_state *es) {
@@ -123,6 +127,7 @@ void telnet_close(struct tcp_pcb *tpcb, struct telnet_state *es) {
 	}
 
 	tcp_close(tpcb);
+	accept--;
 }
 
 static err_t telnet_poll(void *arg, struct tcp_pcb *pcb){
@@ -261,7 +266,7 @@ err_t telnet_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t err) {
 
 	int cmd_status;
  	struct telnet_state *es;
-
+	struct pbuf *pb;
 		
   	LWIP_ASSERT("arg != NULL",arg != NULL);
   	es = (struct telnet_state *)arg;
@@ -293,11 +298,12 @@ err_t telnet_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t err) {
 		tcp_recved(tpcb, p->tot_len);
 		if(p->tot_len < TELNETD_CONF_LINELEN) {
 			dest = &(es->line[0]);
+			pb=p;
 			do {
-				data = (char *)p->payload;
-				ustrncpy(dest,data,p->len);
-				dest += p->len;
-			} while((p = p->next));
+				data = (char *)pb->payload;
+				ustrncpy(dest,data,pb->len);
+				dest += pb->len;
+			} while((pb = pb->next));
 			*dest='\0';
 		}
 		
@@ -340,7 +346,7 @@ err_t telnet_accept(void *arg, struct tcp_pcb *tpcb, err_t err) {
 	tcp_setprio(tpcb, TCP_PRIO_MIN);
 	
 	es = (struct telnet_state *)pvPortMalloc(sizeof(struct telnet_state));
-  	if (es != NULL)   {
+  	if (es != NULL && accept == 0)   {
 		cmd_out = (struct console_state *)pvPortMalloc(sizeof(struct console_state));
 		cmd_out->line=-1;
 	
@@ -354,6 +360,7 @@ err_t telnet_accept(void *arg, struct tcp_pcb *tpcb, err_t err) {
 		
 		err = tcp_write(tpcb, welcome, ustrlen(welcome), 0);
 		if(err == ERR_OK) {
+			accept++;
 			tcp_output(tpcb);
 		}
 	} else {
@@ -373,7 +380,8 @@ void telnetd_init(void) {
 
 		err = tcp_bind(pcb, IP_ADDR_ANY, 23);
 		if (err == ERR_OK)   {
-			pcb = tcp_listen_with_backlog(pcb,1); // only 1 connection at the time, resolve extern struct console_state *cmd_out if you need more
+			pcb = tcp_listen(pcb); // only 1 connection at the time, resolve extern struct console_state *cmd_out if you need more
+								   // listen_with_backlog doesn't work as expected
 			tcp_accept(pcb, telnet_accept);
 		}
 	}

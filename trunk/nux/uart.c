@@ -87,7 +87,11 @@ void UARTSend(unsigned long ulBase, const char *pucBuffer, unsigned short ulCoun
 	}
 }
 
-
+/*
+	UART interrupt handler.
+	Caution: As long as this function uses a function ending with 'FromISR' the priority must set between 0xC0 and 0xA0
+	
+*/
 void generic_uart_handler(struct uart_info *uart) {
 	unsigned long ulStatus;
 	portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
@@ -108,8 +112,11 @@ void generic_uart_handler(struct uart_info *uart) {
 	} else if(ulStatus & (UART_INT_OE | UART_INT_BE | UART_INT_PE | UART_INT_FE)) {
 		uart->err++;
 	}
+	portEND_SWITCHING_ISR(xHigherPriorityTaskWoken);
 }
 
+void UART0IntHandler(void) {
+}
 
 void UART1IntHandler(void) {
 	generic_uart_handler(get_uart_profile(MODULE1));
@@ -119,29 +126,35 @@ void UART2IntHandler(void) {
 	generic_uart_handler(get_uart_profile(MODULE2));
 }
 
+typedef void (*inthandler)();
+static const inthandler handler[3] = {
+	UART0IntHandler,UART1IntHandler,UART2IntHandler
+};
+
+static unsigned long interrupts[3] = {
+	INT_UART0,INT_UART1,INT_UART2
+};
+
 void uart_init(unsigned short uart_idx, unsigned long baud, unsigned short config) {
-	SysCtlPeripheralEnable(periph_uart[uart_idx]); // init uart 1
+	SysCtlPeripheralEnable(periph_uart[uart_idx]);
 	SysCtlPeripheralEnable(periph_gpio[uart_idx]);
 	
 	GPIOPinTypeUART(gpio_port[uart_idx], gpio_pins[uart_idx]);
 
 	UARTConfigSetExpClk(uart_base[uart_idx], SysCtlClockGet(), baud, config);
 	switch(uart_idx) {
-		case 1: {
-			UARTFIFOLevelSet(uart_base[uart_idx], UART_FIFO_TX7_8, UART_FIFO_RX7_8);
-			UARTIntRegister(uart_base[uart_idx], UART1IntHandler);
-			IntEnable(INT_UART1);
-		    UARTIntEnable(uart_base[uart_idx], UART_INT_RX | UART_INT_RT | UART_INT_OE);
-			break;
-		}
+		case 1:
 		case 2: {
+			UARTFIFOEnable(uart_base[uart_idx]);
 			UARTFIFOLevelSet(uart_base[uart_idx], UART_FIFO_TX7_8, UART_FIFO_RX7_8);
-			UARTIntRegister(uart_base[uart_idx], UART2IntHandler);
-			IntEnable(INT_UART2);
+			UARTIntRegister(uart_base[uart_idx], handler[uart_idx]);
+			// Set interrupt priority to number higher than configMAX_SYSCALL_INTERRUPT_PRIORITY
+			// defined in FreeRTOSConfig.h, see www.freertos.org
+			IntPrioritySet(interrupts[uart_idx], SET_SYSCALL_INTERRUPT_PRIORITY(6));
+			IntEnable(interrupts[uart_idx]);
 		    UARTIntEnable(uart_base[uart_idx], UART_INT_RX | UART_INT_RT | UART_INT_OE);
 			break;
 		}
-
 	}
 
 }

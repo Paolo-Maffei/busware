@@ -75,21 +75,20 @@ void readuart_thread(void *params) {
                 for(i=0; i < len;i++) {
                         xQueueReceive( uart->queue, outbuf+i, portMAX_DELAY);
                 }
-                
 				err = netconn_write(newconn, outbuf, len, NETCONN_COPY);
 				if(err != ERR_OK) {
 					LWIP_DEBUGAPPS("rawuart netconn_write err: %d\r\n",err);
 					goto finish;
 				}
 			}
-
+			
 			buf = netconn_recv(newconn);
 			if (buf != NULL) {
 				do {
 					netbuf_data(buf, (void *)&inbuf, &len);
 					UARTSend(uart->base,inbuf,len); // this is blocking until all characters have been sent, consider buffering if it's too slow
 					uart->sent += len;
-				} while (netbuf_next(buf) > 0); // read all data
+				} while (netbuf_next(buf) != -1); // read all data
 				netbuf_delete(buf);
 			} else if (netconn_err(newconn) != ERR_TIMEOUT) {
 				LWIP_DEBUGAPPS("rawuart netconn_recv err: %d\r\n",netconn_err(newconn));
