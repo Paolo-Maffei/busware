@@ -47,7 +47,7 @@ SOURCE=	main.c \
 		startup.c \
 		uart.c \
 		console.c \
-		nuxeeprom.c \
+		modeeprom.c \
 		modules.c \
 		relay.c \
 		web.c \
