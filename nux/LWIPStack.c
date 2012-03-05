@@ -51,7 +51,7 @@
 #include "telnetd.h"
 #include "rawuart.h"
 #include "modules.h"
-#include "i2c_rw.h"
+#include "nuxeeprom.h"
 #include "web.h"
 #include "ETHIsr.h"
 #include "LWIPStack.h"
@@ -539,9 +539,11 @@ void LWIPServiceTaskInit(void *pvParameters) {
 	struct ip_addr ip_addr;
 	struct ip_addr net_mask;
 	struct ip_addr gw_addr;
+#ifndef MAINT
 	struct uart_info *profile;
 	unsigned short start_web;
-	
+#endif
+
 	LWIP_ASSERT("pvParameters != NULL", (pvParameters != NULL));
 
 	IP_CONFIG * ipCfg = (IP_CONFIG *)pvParameters;

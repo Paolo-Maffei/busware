@@ -15,7 +15,7 @@
 
 /* The maximum number of messages that can be waiting for process at any one
 time. */
-#define UART_QUEUE_SIZE						( 512 )
+#define UART_QUEUE_SIZE						( 128 )
 
 
 #define configUSE_PREEMPTION			1
