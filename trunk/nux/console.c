@@ -35,7 +35,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "console.h"
 
 #include "LWIPStack.h"
-#include "i2c_rw.h"
+#include "nuxeeprom.h"
 #include "modules.h"
 #include "crc.h"
 #include "relay.h"
@@ -185,7 +185,7 @@ int cmd_stats(int argc, char *argv[]) {
 			switch	(module_profile_id(i)) {
 				case PROFILE_UART: {
 					uart_config = get_uart_profile(i);
-					cmd_print("\r\nmodule id: %d base: %X port: %d rcv: %d sent: %d err: %d lost: %d profile: ", i, uart_config->base, uart_config->port,uart_config->recv, uart_config->sent, uart_config->err, uart_config->lost);
+					cmd_print("\r\nmodule id: %d base: %X port: %d rcv: %d sent: %d err: %d lost: %d buf: %d profile: ", i, uart_config->base, uart_config->port,uart_config->recv, uart_config->sent, uart_config->err, uart_config->lost,uart_config->buf_size * UART_QUEUE_SIZE);
 					usnprintf((char *)&buf, 3, "%d",i+1);
 					argc=2;
 					argv[1]=(char *)&buf;
@@ -430,7 +430,7 @@ int read_uartmode(int argc, char *argv[]) {
 }
 
 
-void save_uart_config(unsigned char slave_address,unsigned long uart_speed, unsigned short config, unsigned short uart_base,unsigned long port) {
+void save_uart_config(unsigned char slave_address,unsigned long uart_speed, unsigned short config, unsigned short uart_base, unsigned short buf_size) {
 	struct uart_profile *profile;
 	
 	if(I2C_exists(slave_address)) {
@@ -438,9 +438,8 @@ void save_uart_config(unsigned char slave_address,unsigned long uart_speed, unsi
 		profile->profile  = PROFILE_UART;
 		profile->baud   = uart_speed;
 		profile->config = config;
-		profile->port   = port;
+		profile->buf_size = buf_size;
 		I2C_write(slave_address,(unsigned char *) profile, sizeof(struct uart_profile), sizeof(struct module_info)); // write after header
-		vTaskDelay(100 / portTICK_RATE_MS); // there must be a delay after write or avoid I2C_read()
 		vPortFree(profile);
 	} else {
 		cmd_print("\r\n Module %d doesn't exists.",uart_base);
@@ -454,10 +453,10 @@ void save_uart_config(unsigned char slave_address,unsigned long uart_speed, unsi
 int cmd_uartmode(int argc, char *argv[]) {
 
     long lEEPROMRetStatus;
-    unsigned short uart_base,data;
-	unsigned long  ul_base,uart_speed,port;
+    unsigned short uart_base,data,buf_size;
+	unsigned long  ul_base,uart_speed;
 	
-	if (!(argc == 2 || argc == 6 || argc == 7)) {
+	if (!(argc == 2 || argc == 6 || argc == 7 )) {
         cmd_print("Wrong number of arguments\r\n");
         return(ERROR_UNHANDLED);
 	}
@@ -506,15 +505,21 @@ int cmd_uartmode(int argc, char *argv[]) {
 			lEEPROMRetStatus=SoftEEPROMWrite(UART0_SPEED_LOW_ID, (unsigned short)uart_speed );
 			lEEPROMRetStatus=SoftEEPROMWrite(UART0_CONFIG_ID, data);
 		} else {
-			if(!module_exists(uart_base-1)) {
-				cmd_print("\r\nUart not initialised. Module %d doesn't exists.", uart_base);
+			if(!(module_exists(uart_base-1) && module_profile_id(uart_base-1) == PROFILE_UART)) {
+				cmd_print("\r\nUart not initialised. Module %d doesn't exists or has the wrong type.", uart_base);
 				return(0);
 			}
+			
+			if(argc == 7) {
+				buf_size = ustrtoul(argv[6],NULL,0);
+			} else {
+				buf_size = 1;
+			}
 			switch(uart_base) {
-				case 1: { port= (argc==7) ? ustrtoul(argv[6],NULL,0): 1234; save_uart_config(SLAVE_ADDRESS_MODULE1,uart_speed,data,uart_base,port); break;}
-				case 2: { port= (argc==7) ? ustrtoul(argv[6],NULL,0): 2345; save_uart_config(SLAVE_ADDRESS_MODULE2,uart_speed,data,uart_base,port); break;}
-				case 3: { port= (argc==7) ? ustrtoul(argv[6],NULL,0): 3456; save_uart_config(SLAVE_ADDRESS_MODULE3,uart_speed,data,uart_base,port); break;}
-				case 4: { port= (argc==7) ? ustrtoul(argv[6],NULL,0): 4567; save_uart_config(SLAVE_ADDRESS_MODULE4,uart_speed,data,uart_base,port); break;}
+				case 1: { save_uart_config(SLAVE_ADDRESS_MODULE1,uart_speed,data,uart_base,buf_size); break;}
+				case 2: { save_uart_config(SLAVE_ADDRESS_MODULE2,uart_speed,data,uart_base,buf_size); break;}
+				case 3: { save_uart_config(SLAVE_ADDRESS_MODULE3,uart_speed,data,uart_base,buf_size); break;}
+				case 4: { save_uart_config(SLAVE_ADDRESS_MODULE4,uart_speed,data,uart_base,buf_size); break;}
 			}
 			
 		}
@@ -642,7 +647,7 @@ cmdline_entry g_sCmdTable[] = {
 #endif
     { "restart",  cmd_restart,  "    : Restart software  - Usage: restart" },
     { "ipmode", cmd_ipmode, ": set/display ipmode - Usage: ipmode [dhcp|static] [addr mask gateway]" },
-    { "uart",   cmd_uartmode, ": set/display uart - uart <id> <speed> <len> <stop> <parity> [port]" },
+    { "uart",   cmd_uartmode, ": set/display uart - uart  <id> <speed> <len> <stop> <parity> [buf]" },
     { "stats", cmd_stats, ": displays some statistics" },
     { "quit",   cmd_quit,   "    : Quit console" },
 

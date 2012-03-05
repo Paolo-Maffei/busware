@@ -48,9 +48,9 @@ struct module_info {
 
 struct uart_profile {
 	unsigned short profile;
-	unsigned long baud;
+	unsigned long  baud;
 	unsigned short config;
-	unsigned long port;
+	unsigned short buf_size;
 };
 
 
@@ -70,6 +70,7 @@ struct uart_info {
 	unsigned long sent;
 	unsigned long lost;
 	unsigned long err;
+	unsigned short buf_size;
 	xQueueHandle queue;
 };
 

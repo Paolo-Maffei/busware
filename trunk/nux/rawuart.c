@@ -64,7 +64,7 @@ void readuart_thread(void *params) {
 		/* Grab new connection. */
 		newconn = netconn_accept(conn);
 		newconn->recv_timeout = 75; // wait 75ms for data from ethernet
-		outbuf = (portCHAR *)pvPortMalloc(UART_QUEUE_SIZE);
+		outbuf = (portCHAR *)pvPortMalloc(uart->buf_size * UART_QUEUE_SIZE);
 		
 		LWIP_DEBUGAPPS("rawuart connection accepted\r\n");
 	

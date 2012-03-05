@@ -47,7 +47,7 @@ SOURCE=	main.c \
 		startup.c \
 		uart.c \
 		console.c \
-		i2c_rw.c \
+		nuxeeprom.c \
 		modules.c \
 		relay.c \
 		web.c \
@@ -108,11 +108,10 @@ OBJS = $(SOURCE:.c=.o)
 #
 CFLAGS+=${patsubst %,-I%,${subst :, ,${IPATH}}}
 
-.PHONY: all
+.PHONY: all flash clean
 all: nux.bin
 	 
 
-.PHONY: flash
 flash: all
 	$(SFLASH) -c $(TTY) -b 115200 -p 0x1000 -d nux.bin
 
@@ -125,7 +124,6 @@ nux.axf : $(OBJS) Makefile
 $(OBJS) : %.o : %.c Makefile FreeRTOSConfig.h
 	$(CC) -c $(CFLAGS) $< -o $@
 
-.PHONY: clean
 clean :
 	touch Makefile
 	rm -f $(OBJS)

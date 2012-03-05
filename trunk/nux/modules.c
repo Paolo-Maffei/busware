@@ -32,7 +32,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "driverlib/interrupt.h"
 
 #include "modules.h"
-#include "i2c_rw.h"
+#include "nuxeeprom.h"
 #include "crc.h"
 #include "relay.h"
 
@@ -92,18 +92,24 @@ void module_init(unsigned short module_idx) {
 				if(uart->profile == PROFILE_UART) {
 					uart_config->baud   = uart->baud;
 					uart_config->config = uart->config;
-					uart_config->port   = uart->port;
+					uart_config->buf_size = (uart->buf_size & 0x0f);
+#ifdef INCOMPATIBLE_PROFILE
+					uart_config->baud = 115200;
+					uart_config->config = (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE | UART_CONFIG_PAR_NONE);
+					uart_config->buf_size = 1;
+#endif
 				} else {
 					uart_config->baud = 115200;
 					uart_config->config = (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE | UART_CONFIG_PAR_NONE);
-					uart_config->port = 1234;
+					uart_config->buf_size = 1;
 				}
+				uart_config->port = 1234+module_idx;
 				uart_config->profile = PROFILE_UART;
 				uart_config->recv    = 0;
 				uart_config->sent    = 0;
 				uart_config->err     = 0;
 				uart_config->lost    = 0;
-				uart_config->queue   = xQueueCreate( UART_QUEUE_SIZE, sizeof(char));
+				uart_config->queue   = xQueueCreate( uart_config->buf_size * UART_QUEUE_SIZE, sizeof(char));
 				uart_config->base    = uart_base[module_idx+1];
 				uart_init(module_idx+1, uart_config->baud, uart_config->config); // MODULE1 == UART1, MODULE2 == UART2 etc.
 				module[module_idx] = (unsigned char *)uart_config;
