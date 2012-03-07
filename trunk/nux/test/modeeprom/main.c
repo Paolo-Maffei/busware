@@ -16,162 +16,145 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 *************************************************************************/
 
-/* Scheduler includes. */
-#include "FreeRTOS.h"
-#include "task.h"
-#include "queue.h"
-#include "semphr.h"
 
 /* Hardware library includes. */
 #include "inc/hw_memmap.h"
 #include "inc/hw_types.h"
 #include "inc/hw_sysctl.h"
-#include "inc/hw_ints.h"
-#include "inc/hw_watchdog.h"
 
 /* driverlib library includes */
 #include "driverlib/interrupt.h"
 #include "driverlib/sysctl.h"
 #include "driverlib/gpio.h"
-#include "driverlib/grlib.h"
+
 #include "driverlib/uart.h"
-#include "driverlib/watchdog.h"
+
 #include "driverlib/debug.h"
 
-#include "lwip/tcpip.h"
-#include "lwiplib.h"
-#include "lwip/netif.h"
-
 #include "utils/vstdlib.h"
-
-#include "LWIPStack.h"
-#include "ETHIsr.h"
-#include "softeeprom.h"
-#include "console.h"
-#include "modules.h"
-
-
-#define mainBASIC_TELNET_STACK_SIZE            ( configMINIMAL_STACK_SIZE * 2 )
-
-
-#define SIM_TASK_STACK_SIZE			( configMINIMAL_STACK_SIZE + 100)
-
-/* Task priorities. */
-#define CHECK_TASK_PRIORITY				( tskIDLE_PRIORITY + 3 )
+#include "modeeprom.h"
 
 static const char * const g_pcHex = "0123456789abcdef";
 
-/*-----------------------------------------------------------*/
-void console( void *pvParameters );
+const char * const welcome = "\r\nnux modeeprom test V1.0";
+
 static void prvSetupHardware( void ); // configure the hardware
 
 extern void uart_init(unsigned short uart_idx, unsigned long baud, unsigned short config);
 /*-----------------------------------------------------------*/
 
-volatile unsigned short should_reset; // watchdog variable to perform a reboot
-
-// global stats
-
-/*
-  required when compiling with MemMang/heap_3.c
-*/
-extern int  __HEAP_START;
-
-extern void *_sbrk(int incr) {
-    static unsigned char *heap = NULL;
-    unsigned char *prev_heap;
-
-    if (heap == NULL) {
-        heap = (unsigned char *)&__HEAP_START;
-    }
-    prev_heap = heap;
-
-    heap += incr;
-
-    return (void *)prev_heap;
-}
+void INFO(const char *pcString, ...);
 
 extern void UARTSend(unsigned long ulBase, const char *pucBuffer, unsigned short ulCount);
+extern int UARTgets(unsigned long ulBase, char *pcBuf, unsigned long ulLen);
 
 void blinky(unsigned int count) {
-
+volatile unsigned long ulLoop;
     while( 0 < count-- )    {
-		GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_0, GPIO_PIN_0);
-		vTaskDelay(1000 / portTICK_RATE_MS);
-
+        //
+        for(ulLoop = 0; ulLoop < 2000000; ulLoop++);
+        //
+        // Output high level
+        //
+        GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_0, GPIO_PIN_0);
+        //
+        // Delay some time
+        //
+        for(ulLoop = 0; ulLoop < 2000000; ulLoop++);
+        //
+        // Output low level
+        //
         GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_0, ~GPIO_PIN_0);
-		vTaskDelay(1000 / portTICK_RATE_MS);
     }
 }
 
-void ethernetThread(void *pvParameters) {
-	IP_CONFIG ipconfig;
-	tBoolean found, found_addr;
-    long lEEPROMRetStatus;
-    unsigned short usdata,usdata2;
+int test_init() {
 
-	ETHServiceTaskInit(0);
-	ETHServiceTaskFlush(0,ETH_FLUSH_RX | ETH_FLUSH_TX);
+	MODEE_init();
+	INFO("test_init  ..... PASS");
 
-    lEEPROMRetStatus = SoftEEPROMRead(STATIC_IPADDR_HIGH_ID, &usdata2, &found_addr);
-    lEEPROMRetStatus = SoftEEPROMRead(IPMODE_ID, &usdata, &found);
-	if(lEEPROMRetStatus == 0 && found && found_addr) {
-		ipconfig.IPMode = usdata;
-	} else {
-		ipconfig.IPMode = IPADDR_USE_DHCP;
-	}
-
-	// read static ip address from eeprom
-	if(ipconfig.IPMode == IPADDR_USE_STATIC) {
-		SoftEEPROMRead(STATIC_IPADDR_LOW_ID, &usdata, &found);
-		ipconfig.IPAddr = (usdata2 << 16 & 0xFFFF0000) | (usdata & 0x0000FFFF) ;
-		
-	    SoftEEPROMRead(STATIC_IPMASK_HIGH_ID, &usdata2, &found);
-	    SoftEEPROMRead(STATIC_IPMASK_LOW_ID, &usdata, &found);
-		ipconfig.NetMask = (usdata2 << 16 & 0xFFFF0000) | (usdata & 0x0000FFFF) ;
-		
-	    SoftEEPROMRead(STATIC_IPGW_HIGH_ID, &usdata2, &found);
-	    SoftEEPROMRead(STATIC_IPGW_LOW_ID, &usdata, &found);
-		ipconfig.GWAddr = (usdata2 << 16 & 0xFFFF0000) | (usdata & 0x0000FFFF) ;
-	}
-
-	LWIPServiceTaskInit((void *)&ipconfig);
-
-	// Nothing else to do.  No point hanging around.
-	vTaskDelete( NULL);
+	return 1;
 }
-/*************************************************************************
- * Please ensure to read http://www.freertos.org/portLM3Sxxxx_Eclipse.html
- * which provides information on configuring and running this demo for the
- * various Luminary Micro EKs.
- *************************************************************************/
+
+int test_module_exists() {
+	short int result;
+	
+	result = MODEE_exists(SLAVE_ADDRESS_MODULE1);
+	if( result == 1) {
+		INFO("test_module_exists .... PASS");
+	} else {
+		INFO("test_module_exists .... FAIL");
+	}
+	
+	return result;
+}
+
+int test_write_read() {
+	unsigned char buf[20];
+	unsigned char inbuf[20];
+	
+	buf[0]='1';
+	buf[1]='2';
+	buf[2]='3';
+	buf[3]='4';
+	buf[4]=0;
+	usnprintf((char *)&inbuf,20,"xxxxxxxxxxxxxxxxxxxxxxxxxxx");
+
+	MODEE_write(SLAVE_ADDRESS_MODULE1,(unsigned char *) &buf, 5, 0);
+	
+	MODEE_read(SLAVE_ADDRESS_MODULE1, (unsigned char *) &inbuf, 5, 0);
+	if(ustrncmp((const char *)&buf,(const char *)&inbuf,5) == 0)	{
+		INFO("test_write_read .... PASS");
+	} else {
+		INFO("test_write_read .... FAIL");
+		INFO("data: %s",&inbuf);
+	}
+
+	return 1;
+}
+
+
+int test_write_read_long() {
+	unsigned char buf[20];
+	unsigned char inbuf[20];
+	
+	usnprintf((char *)&buf,20,"Long String with >16 char.");
+	usnprintf((char *)&inbuf,20,"xxxxxxxxxxxxxxxxxxxxxxxxxxx");
+
+	MODEE_write(SLAVE_ADDRESS_MODULE1,(unsigned char *) &buf, 20, 0);
+	
+	MODEE_read(SLAVE_ADDRESS_MODULE1, (unsigned char *) &inbuf, 20, 0);
+	if(ustrncmp((const char *)&buf,(const char *)&inbuf,5) == 0)	{
+		INFO("test_write_read_long .... PASS");
+	} else {
+		INFO("test_write_read_long .... FAIL");
+		INFO("data: %s",&inbuf);
+	}
+
+	return 1;
+}
+
+
 int main( void ) {
+	char cmd_buf[10];
+	
 	prvSetupHardware();
+	
 
-	/* Create the uIP task if running on a processor that includes a MAC and
-	PHY. */
-	if( SysCtlPeripheralPresent( SYSCTL_PERIPH_ETH ) )	{
-		xTaskCreate( ethernetThread, ( signed portCHAR * ) "uIP", mainBASIC_TELNET_STACK_SIZE, NULL, CHECK_TASK_PRIORITY , NULL );
+	for( ;; ) {
+		blinky(2);
+		INFO(welcome);
+		UARTgets(UART0_BASE,cmd_buf, 10);
+		test_init();
+		test_module_exists();
+		test_write_read();
+		test_write_read_long();
 	}
-
-	if (pdPASS != xTaskCreate( console, ( signed portCHAR * ) "CONS", SIM_TASK_STACK_SIZE, NULL, CHECK_TASK_PRIORITY , NULL )) {
-		LWIPDebug("Cant create console!");
-	}
-
-	vTaskStartScheduler(); // Start the scheduler. 
-
-    /* Will only get here if there was insufficient memory to create the idle
-    task. */
-	for( ;; );
 	return 0;
 }
 /*-----------------------------------------------------------*/
 
 void prvSetupHardware( void ){
-	tBoolean found;
-    long lEEPROMRetStatus;
-    unsigned short data,data2;
-	unsigned long uart_speed;
 		
     /* If running on Rev A2 silicon, turn the LDO voltage up to 2.75V.  This is
     a workaround to allow the PLL to operate reliably. */
@@ -182,12 +165,10 @@ void prvSetupHardware( void ){
 	/* Set the clocking to run from the PLL at 50 MHz */
 	SysCtlClockSet( SYSCTL_SYSDIV_4 | SYSCTL_USE_PLL | SYSCTL_OSC_MAIN | SYSCTL_XTAL_8MHZ );
 
-	/* 	Enable Port F for Ethernet LEDs
-		LED0        Bit 3   Output
-		LED1        Bit 2   Output */
-	SysCtlPeripheralEnable( SYSCTL_PERIPH_GPIOF );
-	GPIODirModeSet( GPIO_PORTF_BASE, (GPIO_PIN_2 | GPIO_PIN_3), GPIO_DIR_MODE_HW );
-	GPIOPadConfigSet( GPIO_PORTF_BASE, (GPIO_PIN_2 | GPIO_PIN_3 ), GPIO_STRENGTH_2MA, GPIO_PIN_TYPE_STD );
+    //
+    // Enable the GPIO port that is used for the on-board LED.
+    //
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);
 
     //
     // Enable the GPIO pin for the LED (PF0).  Set the direction as output, and
@@ -200,42 +181,11 @@ void prvSetupHardware( void ){
     //
     IntMasterEnable();
 
-    if(SoftEEPROMInit(0x1F000, 0x20000, 0x800) != 0)  {
-		LWIPDebug("SoftEEPROM initialisation failed.");
-    }
-
-
-    lEEPROMRetStatus = SoftEEPROMRead(UART0_SPEED_HIGH_ID, &data, &found);
-	if(lEEPROMRetStatus == 0 && found) {
-	    SoftEEPROMRead(UART0_SPEED_LOW_ID, &data2, &found);
-		uart_speed = (data << 16 & 0xFFFF0000) | (data2 & 0x0000FFFF);
-	    SoftEEPROMRead(UART0_CONFIG_ID, &data, &found);
-	} else {
-		uart_speed=115200;
-		data = (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE | UART_CONFIG_PAR_NONE);
-	}
-
-	uart_init(0, uart_speed, data);
-
-	SysCtlPeripheralEnable(SYSCTL_PERIPH_WDOG0);
-	
-	IntPriorityGroupingSet(4);
-
-	IntPrioritySet(INT_WATCHDOG,SET_SYSCALL_INTERRUPT_PRIORITY(5));
-    IntEnable(INT_WATCHDOG); // Enable the watchdog interrupt.
-    WatchdogReloadSet(WATCHDOG0_BASE, SysCtlClockGet());
-    WatchdogResetEnable(WATCHDOG0_BASE);
-    WatchdogEnable(WATCHDOG0_BASE);
-
-	modules_init();
+	uart_init(0, 115200, (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE | UART_CONFIG_PAR_NONE));
 
 }
 /*-----------------------------------------------------------*/
 
-
-void vApplicationStackOverflowHook(xTaskHandle *pxTask, signed portCHAR *pcTaskName ) {
-	LWIPDebug("Stackoverflow task:%s",pcTaskName);
-}
 
 /* This function can't fragment the memory. The message gets parsed, formatted and print to UART0.
 
@@ -263,7 +213,7 @@ void vApplicationStackOverflowHook(xTaskHandle *pxTask, signed portCHAR *pcTaskN
   was expected, an error of some kind will most likely occur.
  
 */
-void LWIPDebug(const char *pcString, ...) {
+void INFO(const char *pcString, ...) {
 	unsigned long ulIdx, ulValue, ulPos, ulCount, ulBase, ulNeg;
 	char *pcStr, pcBuf[16], cFill;
 	va_list vaArgP;
@@ -415,12 +365,4 @@ void LWIPDebug(const char *pcString, ...) {
 	va_end(vaArgP);
 }
 
-/*
-	Watchdog handler. 
-*/
-void WatchdogIntHandler(void) {
-    if (! should_reset) {
-	    WatchdogIntClear(WATCHDOG0_BASE);
-	}
 
-}

@@ -25,7 +25,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "driverlib/i2c.h"
 
 
-void I2C0_init() {
+void MODEE_init() {
 
     // The I2C0 peripheral must be enabled before use.
     //
@@ -66,7 +66,7 @@ void I2C0_init() {
 // \param data is the value to be written in the Eeprom
 // \param reg_address is the memory address which will be written at
 //*****************************************************************************
-void I2C_write(unsigned char slave_address, unsigned char *data, unsigned long length, unsigned short reg_address) {
+void modee_write_block(unsigned char slave_address, unsigned char *data, unsigned long length, unsigned short reg_address) {
 	int i;
     ///////////////////////////////////////////////////////////////////
     // Start with the control byte (address) to the Eeprom.
@@ -87,15 +87,30 @@ void I2C_write(unsigned char slave_address, unsigned char *data, unsigned long l
     I2CMasterControl(I2C0_MASTER_BASE, I2C_MASTER_CMD_BURST_SEND_FINISH);
     while(I2CMasterBusy(I2C0_MASTER_BASE)) {}    //wait
 
-    // here must be a delay to wait the write complete or to poll the ACK
+	SysCtlDelay(SysCtlClockGet() / 500);    // here must be a delay to wait the write complete or to poll the ACK
 }
 
+
+void MODEE_write(unsigned char slave_address, unsigned char *data, unsigned long length, unsigned short reg_address) {
+	unsigned long blklen;
+	unsigned short offset;
+	offset = 0;
+	while (length > 0) {
+		blklen = length;
+		if(blklen > 16) {
+			blklen=16;
+		}
+		modee_write_block(slave_address,data+offset,blklen,reg_address+offset);
+		length-=blklen;
+		offset+=blklen;
+	}
+}
 //*****************************************************************************
 // Non Interupt driven Read from the Eeprom device.
 // \param slave_address is the Control byte shift right once. (0x50=0xA0>>1)  
 // \param reg_address is the memory address to be read
 //*****************************************************************************
-void I2C_read(unsigned char slave_address, unsigned char *data, unsigned long length, unsigned short reg_address){
+void MODEE_read(unsigned char slave_address, unsigned char *data, unsigned long length, unsigned short reg_address){
 	int i;
      unsigned long ret = 0;
     ///////////////////////////////////////////////////////////////////
@@ -132,7 +147,7 @@ void I2C_read(unsigned char slave_address, unsigned char *data, unsigned long le
     *(data + i) = ret;
 }
 
-unsigned short I2C_exists(unsigned char slave_address) {
+unsigned short MODEE_exists(unsigned char slave_address) {
 	unsigned long ret = 0;
 	
     I2CMasterSlaveAddrSet(I2C0_MASTER_BASE, slave_address, false);

@@ -3,14 +3,78 @@
 <plist version="1.0">
 <dict>
 	<key>currentDocument</key>
-	<string>main.c</string>
+	<string>modeeprom.c</string>
 	<key>documents</key>
 	<array>
 		<dict>
 			<key>filename</key>
+			<string>relay.h</string>
+			<key>lastUsed</key>
+			<date>2012-03-05T14:21:06Z</date>
+			<key>selected</key>
+			<true/>
+		</dict>
+		<dict>
+			<key>filename</key>
+			<string>relay.c</string>
+			<key>lastUsed</key>
+			<date>2012-02-13T08:19:27Z</date>
+			<key>selected</key>
+			<true/>
+		</dict>
+		<dict>
+			<key>filename</key>
+			<string>modules.c</string>
+			<key>lastUsed</key>
+			<date>2012-03-05T16:23:46Z</date>
+			<key>selected</key>
+			<true/>
+		</dict>
+		<dict>
+			<key>filename</key>
+			<string>modules.h</string>
+			<key>lastUsed</key>
+			<date>2012-03-05T14:16:51Z</date>
+			<key>selected</key>
+			<true/>
+		</dict>
+		<dict>
+			<key>filename</key>
+			<string>modeeprom.c</string>
+			<key>lastUsed</key>
+			<date>2012-03-07T15:44:48Z</date>
+			<key>selected</key>
+			<true/>
+		</dict>
+		<dict>
+			<key>filename</key>
+			<string>modeeprom.h</string>
+			<key>lastUsed</key>
+			<date>2012-03-05T14:31:47Z</date>
+			<key>selected</key>
+			<true/>
+		</dict>
+		<dict>
+			<key>filename</key>
+			<string>web.h</string>
+			<key>lastUsed</key>
+			<date>2012-02-13T13:29:00Z</date>
+			<key>selected</key>
+			<true/>
+		</dict>
+		<dict>
+			<key>filename</key>
+			<string>web.c</string>
+			<key>lastUsed</key>
+			<date>2012-03-05T16:17:23Z</date>
+			<key>selected</key>
+			<true/>
+		</dict>
+		<dict>
+			<key>filename</key>
 			<string>telnetd.c</string>
 			<key>lastUsed</key>
-			<date>2011-12-02T22:38:00Z</date>
+			<date>2012-03-05T14:18:48Z</date>
 			<key>selected</key>
 			<true/>
 		</dict>
@@ -18,7 +82,7 @@
 			<key>filename</key>
 			<string>telnetd.h</string>
 			<key>lastUsed</key>
-			<date>2011-11-29T15:56:37Z</date>
+			<date>2012-03-05T14:08:23Z</date>
 			<key>selected</key>
 			<true/>
 		</dict>
@@ -26,7 +90,7 @@
 			<key>filename</key>
 			<string>lwipopts.h</string>
 			<key>lastUsed</key>
-			<date>2011-12-01T09:03:12Z</date>
+			<date>2012-02-15T16:28:37Z</date>
 			<key>selected</key>
 			<true/>
 		</dict>
@@ -34,7 +98,7 @@
 			<key>filename</key>
 			<string>Makefile</string>
 			<key>lastUsed</key>
-			<date>2011-12-02T18:10:32Z</date>
+			<date>2012-03-05T14:18:47Z</date>
 			<key>selected</key>
 			<true/>
 		</dict>
@@ -42,7 +106,7 @@
 			<key>filename</key>
 			<string>console.c</string>
 			<key>lastUsed</key>
-			<date>2011-12-02T22:24:39Z</date>
+			<date>2012-03-05T16:06:29Z</date>
 			<key>selected</key>
 			<true/>
 		</dict>
@@ -50,7 +114,7 @@
 			<key>filename</key>
 			<string>console.h</string>
 			<key>lastUsed</key>
-			<date>2011-11-30T17:32:07Z</date>
+			<date>2012-02-13T13:28:59Z</date>
 			<key>selected</key>
 			<true/>
 		</dict>
@@ -58,7 +122,7 @@
 			<key>filename</key>
 			<string>ETHIsr.c</string>
 			<key>lastUsed</key>
-			<date>2011-12-02T17:44:16Z</date>
+			<date>2012-02-29T10:52:42Z</date>
 			<key>selected</key>
 			<true/>
 		</dict>
@@ -74,7 +138,7 @@
 			<key>filename</key>
 			<string>FreeRTOSConfig.h</string>
 			<key>lastUsed</key>
-			<date>2011-11-30T17:41:02Z</date>
+			<date>2012-02-29T18:05:24Z</date>
 			<key>selected</key>
 			<true/>
 		</dict>
@@ -82,7 +146,7 @@
 			<key>filename</key>
 			<string>lwiplib.h</string>
 			<key>lastUsed</key>
-			<date>2011-12-02T18:10:37Z</date>
+			<date>2012-01-16T16:06:48Z</date>
 			<key>selected</key>
 			<true/>
 		</dict>
@@ -90,7 +154,7 @@
 			<key>filename</key>
 			<string>LWIPStack.c</string>
 			<key>lastUsed</key>
-			<date>2011-12-02T22:44:25Z</date>
+			<date>2012-03-01T11:24:41Z</date>
 			<key>selected</key>
 			<true/>
 		</dict>
@@ -98,7 +162,7 @@
 			<key>filename</key>
 			<string>main.c</string>
 			<key>lastUsed</key>
-			<date>2011-12-02T22:49:55Z</date>
+			<date>2012-03-05T16:32:47Z</date>
 			<key>selected</key>
 			<true/>
 		</dict>
@@ -106,7 +170,7 @@
 			<key>filename</key>
 			<string>LWIPStack.h</string>
 			<key>lastUsed</key>
-			<date>2011-12-01T08:37:37Z</date>
+			<date>2012-02-13T09:29:36Z</date>
 			<key>selected</key>
 			<true/>
 		</dict>
@@ -114,7 +178,7 @@
 			<key>filename</key>
 			<string>standalone.ld</string>
 			<key>lastUsed</key>
-			<date>2011-11-29T15:56:43Z</date>
+			<date>2012-03-05T14:03:34Z</date>
 			<key>selected</key>
 			<true/>
 		</dict>
@@ -122,7 +186,7 @@
 			<key>filename</key>
 			<string>startup.c</string>
 			<key>lastUsed</key>
-			<date>2011-12-01T09:40:49Z</date>
+			<date>2012-02-09T13:54:45Z</date>
 			<key>selected</key>
 			<true/>
 		</dict>
@@ -130,7 +194,7 @@
 			<key>filename</key>
 			<string>uart.c</string>
 			<key>lastUsed</key>
-			<date>2011-12-02T22:49:55Z</date>
+			<date>2012-02-29T17:57:43Z</date>
 			<key>selected</key>
 			<true/>
 		</dict>
@@ -138,7 +202,7 @@
 			<key>filename</key>
 			<string>rawuart.c</string>
 			<key>lastUsed</key>
-			<date>2011-12-02T18:10:30Z</date>
+			<date>2012-02-29T18:22:12Z</date>
 			<key>selected</key>
 			<true/>
 		</dict>
@@ -146,11 +210,13 @@
 			<key>filename</key>
 			<string>rawuart.h</string>
 			<key>lastUsed</key>
-			<date>2011-11-29T15:26:27Z</date>
+			<date>2012-02-14T12:51:13Z</date>
 			<key>selected</key>
 			<true/>
 		</dict>
 		<dict>
+			<key>expanded</key>
+			<true/>
 			<key>name</key>
 			<string>LuminaryMicro</string>
 			<key>regexFolderFilter</key>
@@ -161,6 +227,8 @@
 			<string>LuminaryMicro</string>
 		</dict>
 		<dict>
+			<key>expanded</key>
+			<true/>
 			<key>name</key>
 			<string>FreeRTOS</string>
 			<key>regexFolderFilter</key>
@@ -171,6 +239,8 @@
 			<string>FreeRTOS</string>
 		</dict>
 		<dict>
+			<key>expanded</key>
+			<true/>
 			<key>name</key>
 			<string>lwip-1.3.2</string>
 			<key>regexFolderFilter</key>
@@ -181,6 +251,8 @@
 			<string>lwip-1.3.2</string>
 		</dict>
 		<dict>
+			<key>expanded</key>
+			<true/>
 			<key>name</key>
 			<string>utils</string>
 			<key>regexFolderFilter</key>
@@ -191,6 +263,8 @@
 			<string>utils</string>
 		</dict>
 		<dict>
+			<key>expanded</key>
+			<true/>
 			<key>name</key>
 			<string>softeeprom</string>
 			<key>regexFolderFilter</key>
@@ -205,28 +279,132 @@
 	<integer>200</integer>
 	<key>metaData</key>
 	<dict>
-		<key>ETHIsr.c</key>
+		<key>FreeRTOS/Source/include/queue.h</key>
 		<dict>
 			<key>caret</key>
 			<dict>
 				<key>column</key>
-				<integer>20</integer>
+				<integer>32</integer>
 				<key>line</key>
-				<integer>20</integer>
+				<integer>84</integer>
 			</dict>
 			<key>firstVisibleColumn</key>
 			<integer>0</integer>
 			<key>firstVisibleLine</key>
+			<integer>775</integer>
+		</dict>
+		<key>FreeRTOS/Source/portable/GCC/AVR32_UC3/port.c</key>
+		<dict>
+			<key>caret</key>
+			<dict>
+				<key>column</key>
+				<integer>9</integer>
+				<key>line</key>
+				<integer>165</integer>
+			</dict>
+			<key>columnSelection</key>
+			<false/>
+			<key>firstVisibleColumn</key>
 			<integer>0</integer>
+			<key>firstVisibleLine</key>
+			<integer>267</integer>
+			<key>selectFrom</key>
+			<dict>
+				<key>column</key>
+				<integer>3</integer>
+				<key>line</key>
+				<integer>165</integer>
+			</dict>
+			<key>selectTo</key>
+			<dict>
+				<key>column</key>
+				<integer>9</integer>
+				<key>line</key>
+				<integer>165</integer>
+			</dict>
+		</dict>
+		<key>FreeRTOS/Source/portable/GCC/MicroBlaze/port.c</key>
+		<dict>
+			<key>caret</key>
+			<dict>
+				<key>column</key>
+				<integer>0</integer>
+				<key>line</key>
+				<integer>63</integer>
+			</dict>
+			<key>columnSelection</key>
+			<false/>
+			<key>firstVisibleColumn</key>
+			<integer>0</integer>
+			<key>firstVisibleLine</key>
+			<integer>31</integer>
+			<key>selectFrom</key>
+			<dict>
+				<key>column</key>
+				<integer>19</integer>
+				<key>line</key>
+				<integer>63</integer>
+			</dict>
+			<key>selectTo</key>
+			<dict>
+				<key>column</key>
+				<integer>0</integer>
+				<key>line</key>
+				<integer>63</integer>
+			</dict>
+		</dict>
+		<key>FreeRTOS/Source/queue.c</key>
+		<dict>
+			<key>caret</key>
+			<dict>
+				<key>column</key>
+				<integer>49</integer>
+				<key>line</key>
+				<integer>100</integer>
+			</dict>
+			<key>firstVisibleColumn</key>
+			<integer>0</integer>
+			<key>firstVisibleLine</key>
+			<integer>74</integer>
+		</dict>
+		<key>FreeRTOS/Source/tasks.c</key>
+		<dict>
+			<key>caret</key>
+			<dict>
+				<key>column</key>
+				<integer>38</integer>
+				<key>line</key>
+				<integer>2185</integer>
+			</dict>
+			<key>columnSelection</key>
+			<false/>
+			<key>firstVisibleColumn</key>
+			<integer>0</integer>
+			<key>firstVisibleLine</key>
+			<integer>2155</integer>
+			<key>selectFrom</key>
+			<dict>
+				<key>column</key>
+				<integer>32</integer>
+				<key>line</key>
+				<integer>2185</integer>
+			</dict>
+			<key>selectTo</key>
+			<dict>
+				<key>column</key>
+				<integer>38</integer>
+				<key>line</key>
+				<integer>2185</integer>
+			</dict>
 		</dict>
 		<key>FreeRTOSConfig.h</key>
 		<dict>
 			<key>caret</key>
 			<dict>
 				<key>column</key>
-				<integer>0</integer>
+				<integer>34</integer>
 				<key>line</key>
-				<integer>0</integer>
+				<integer>17</integer>
 			</dict>
 			<key>firstVisibleColumn</key>
 			<integer>0</integer>
@@ -238,206 +416,356 @@
 			<key>caret</key>
 			<dict>
 				<key>column</key>
-				<integer>7</integer>
+				<integer>0</integer>
 				<key>line</key>
-				<integer>541</integer>
+				<integer>0</integer>
+			</dict>
+			<key>firstVisibleColumn</key>
+			<integer>0</integer>
+			<key>firstVisibleLine</key>
+			<integer>507</integer>
+		</dict>
+		<key>LuminaryMicro/driverlib/i2c.h</key>
+		<dict>
+			<key>caret</key>
+			<dict>
+				<key>column</key>
+				<integer>24</integer>
+				<key>line</key>
+				<integer>114</integer>
 			</dict>
 			<key>columnSelection</key>
 			<false/>
 			<key>firstVisibleColumn</key>
 			<integer>0</integer>
 			<key>firstVisibleLine</key>
-			<integer>14</integer>
+			<integer>74</integer>
 			<key>selectFrom</key>
 			<dict>
 				<key>column</key>
-				<integer>1</integer>
+				<integer>16</integer>
 				<key>line</key>
-				<integer>541</integer>
+				<integer>114</integer>
 			</dict>
 			<key>selectTo</key>
 			<dict>
 				<key>column</key>
-				<integer>7</integer>
+				<integer>32</integer>
 				<key>line</key>
-				<integer>541</integer>
+				<integer>114</integer>
 			</dict>
 		</dict>
-		<key>LWIPStack.h</key>
+		<key>LuminaryMicro/driverlib/uart.h</key>
 		<dict>
 			<key>caret</key>
 			<dict>
 				<key>column</key>
-				<integer>39</integer>
+				<integer>18</integer>
 				<key>line</key>
-				<integer>29</integer>
-			</dict>
-			<key>firstVisibleColumn</key>
-			<integer>0</integer>
-			<key>firstVisibleLine</key>
-			<integer>0</integer>
-		</dict>
-		<key>LuminaryMicro/driverlib/debug.h</key>
-		<dict>
-			<key>caret</key>
-			<dict>
-				<key>column</key>
-				<integer>14</integer>
-				<key>line</key>
-				<integer>45</integer>
+				<integer>182</integer>
 			</dict>
 			<key>columnSelection</key>
 			<false/>
 			<key>firstVisibleColumn</key>
 			<integer>0</integer>
 			<key>firstVisibleLine</key>
-			<integer>0</integer>
+			<integer>166</integer>
 			<key>selectFrom</key>
 			<dict>
 				<key>column</key>
-				<integer>8</integer>
+				<integer>12</integer>
 				<key>line</key>
-				<integer>45</integer>
+				<integer>182</integer>
 			</dict>
 			<key>selectTo</key>
 			<dict>
 				<key>column</key>
-				<integer>14</integer>
+				<integer>26</integer>
 				<key>line</key>
-				<integer>45</integer>
+				<integer>182</integer>
 			</dict>
+		</dict>
+		<key>Makefile</key>
+		<dict>
+			<key>caret</key>
+			<dict>
+				<key>column</key>
+				<integer>5</integer>
+				<key>line</key>
+				<integer>49</integer>
+			</dict>
+			<key>firstVisibleColumn</key>
+			<integer>0</integer>
+			<key>firstVisibleLine</key>
+			<integer>12</integer>
 		</dict>
 		<key>console.c</key>
 		<dict>
 			<key>caret</key>
 			<dict>
 				<key>column</key>
-				<integer>15</integer>
+				<integer>9</integer>
 				<key>line</key>
-				<integer>447</integer>
+				<integer>242</integer>
+			</dict>
+			<key>firstVisibleColumn</key>
+			<integer>0</integer>
+			<key>firstVisibleLine</key>
+			<integer>450</integer>
+		</dict>
+		<key>lwip-1.3.2/apps/httpserver_raw/httpd.c</key>
+		<dict>
+			<key>caret</key>
+			<dict>
+				<key>column</key>
+				<integer>67</integer>
+				<key>line</key>
+				<integer>1059</integer>
+			</dict>
+			<key>firstVisibleColumn</key>
+			<integer>0</integer>
+			<key>firstVisibleLine</key>
+			<integer>702</integer>
+		</dict>
+		<key>lwip-1.3.2/src/api/netbuf.c</key>
+		<dict>
+			<key>caret</key>
+			<dict>
+				<key>column</key>
+				<integer>10</integer>
+				<key>line</key>
+				<integer>85</integer>
 			</dict>
 			<key>columnSelection</key>
 			<false/>
 			<key>firstVisibleColumn</key>
 			<integer>0</integer>
 			<key>firstVisibleLine</key>
-			<integer>422</integer>
+			<integer>68</integer>
 			<key>selectFrom</key>
 			<dict>
 				<key>column</key>
-				<integer>11</integer>
+				<integer>6</integer>
 				<key>line</key>
-				<integer>447</integer>
+				<integer>85</integer>
 			</dict>
 			<key>selectTo</key>
 			<dict>
 				<key>column</key>
-				<integer>21</integer>
-				<key>line</key>
-				<integer>447</integer>
-			</dict>
-		</dict>
-		<key>console.h</key>
-		<dict>
-			<key>caret</key>
-			<dict>
-				<key>column</key>
 				<integer>15</integer>
 				<key>line</key>
-				<integer>44</integer>
+				<integer>85</integer>
 			</dict>
-			<key>firstVisibleColumn</key>
-			<integer>0</integer>
-			<key>firstVisibleLine</key>
-			<integer>4</integer>
 		</dict>
-		<key>lwip-1.3.2/contrib/port/FreeRTOS/sys_arch.c</key>
+		<key>lwip-1.3.2/src/api/netdb.c</key>
 		<dict>
 			<key>caret</key>
 			<dict>
 				<key>column</key>
-				<integer>1</integer>
+				<integer>0</integer>
 				<key>line</key>
-				<integer>393</integer>
-			</dict>
-			<key>firstVisibleColumn</key>
-			<integer>0</integer>
-			<key>firstVisibleLine</key>
-			<integer>379</integer>
-		</dict>
-		<key>lwip-1.3.2/doc/rawapi.txt</key>
-		<dict>
-			<key>caret</key>
-			<dict>
-				<key>column</key>
-				<integer>17</integer>
-				<key>line</key>
-				<integer>186</integer>
+				<integer>45</integer>
 			</dict>
 			<key>columnSelection</key>
 			<false/>
 			<key>firstVisibleColumn</key>
 			<integer>0</integer>
 			<key>firstVisibleLine</key>
-			<integer>161</integer>
+			<integer>7</integer>
 			<key>selectFrom</key>
 			<dict>
 				<key>column</key>
-				<integer>8</integer>
+				<integer>19</integer>
 				<key>line</key>
-				<integer>186</integer>
+				<integer>45</integer>
 			</dict>
 			<key>selectTo</key>
 			<dict>
 				<key>column</key>
-				<integer>17</integer>
+				<integer>0</integer>
 				<key>line</key>
-				<integer>186</integer>
+				<integer>45</integer>
 			</dict>
 		</dict>
-		<key>lwiplib.h</key>
+		<key>lwip-1.3.2/src/core/tcp_out.c</key>
 		<dict>
 			<key>caret</key>
 			<dict>
 				<key>column</key>
-				<integer>20</integer>
+				<integer>90</integer>
 				<key>line</key>
-				<integer>1</integer>
+				<integer>198</integer>
 			</dict>
+			<key>columnSelection</key>
+			<false/>
 			<key>firstVisibleColumn</key>
 			<integer>0</integer>
 			<key>firstVisibleLine</key>
-			<integer>0</integer>
+			<integer>168</integer>
+			<key>selectFrom</key>
+			<dict>
+				<key>column</key>
+				<integer>74</integer>
+				<key>line</key>
+				<integer>198</integer>
+			</dict>
+			<key>selectTo</key>
+			<dict>
+				<key>column</key>
+				<integer>90</integer>
+				<key>line</key>
+				<integer>198</integer>
+			</dict>
 		</dict>
-		<key>lwipopts.h</key>
+		<key>lwip-1.3.2/src/include/lwip/debug.h</key>
 		<dict>
 			<key>caret</key>
 			<dict>
 				<key>column</key>
-				<integer>15</integer>
+				<integer>51</integer>
 				<key>line</key>
-				<integer>127</integer>
+				<integer>85</integer>
 			</dict>
+			<key>columnSelection</key>
+			<false/>
 			<key>firstVisibleColumn</key>
 			<integer>0</integer>
 			<key>firstVisibleLine</key>
-			<integer>75</integer>
+			<integer>39</integer>
+			<key>selectFrom</key>
+			<dict>
+				<key>column</key>
+				<integer>33</integer>
+				<key>line</key>
+				<integer>85</integer>
+			</dict>
+			<key>selectTo</key>
+			<dict>
+				<key>column</key>
+				<integer>51</integer>
+				<key>line</key>
+				<integer>85</integer>
+			</dict>
+		</dict>
+		<key>lwip-1.3.2/src/include/lwip/pbuf.h</key>
+		<dict>
+			<key>caret</key>
+			<dict>
+				<key>column</key>
+				<integer>14</integer>
+				<key>line</key>
+				<integer>112</integer>
+			</dict>
+			<key>columnSelection</key>
+			<false/>
+			<key>firstVisibleColumn</key>
+			<integer>0</integer>
+			<key>firstVisibleLine</key>
+			<integer>68</integer>
+			<key>selectFrom</key>
+			<dict>
+				<key>column</key>
+				<integer>5</integer>
+				<key>line</key>
+				<integer>112</integer>
+			</dict>
+			<key>selectTo</key>
+			<dict>
+				<key>column</key>
+				<integer>14</integer>
+				<key>line</key>
+				<integer>112</integer>
+			</dict>
+		</dict>
+		<key>lwip-1.3.2/src/include/lwip/tcp.h</key>
+		<dict>
+			<key>caret</key>
+			<dict>
+				<key>column</key>
+				<integer>60</integer>
+				<key>line</key>
+				<integer>550</integer>
+			</dict>
+			<key>columnSelection</key>
+			<false/>
+			<key>firstVisibleColumn</key>
+			<integer>0</integer>
+			<key>firstVisibleLine</key>
+			<integer>520</integer>
+			<key>selectFrom</key>
+			<dict>
+				<key>column</key>
+				<integer>53</integer>
+				<key>line</key>
+				<integer>550</integer>
+			</dict>
+			<key>selectTo</key>
+			<dict>
+				<key>column</key>
+				<integer>60</integer>
+				<key>line</key>
+				<integer>550</integer>
+			</dict>
+		</dict>
+		<key>lwip-1.3.2/src/include/lwip/tcpip.h</key>
+		<dict>
+			<key>caret</key>
+			<dict>
+				<key>column</key>
+				<integer>34</integer>
+				<key>line</key>
+				<integer>67</integer>
+			</dict>
+			<key>columnSelection</key>
+			<false/>
+			<key>firstVisibleColumn</key>
+			<integer>0</integer>
+			<key>firstVisibleLine</key>
+			<integer>37</integer>
+			<key>selectFrom</key>
+			<dict>
+				<key>column</key>
+				<integer>24</integer>
+				<key>line</key>
+				<integer>67</integer>
+			</dict>
+			<key>selectTo</key>
+			<dict>
+				<key>column</key>
+				<integer>34</integer>
+				<key>line</key>
+				<integer>67</integer>
+			</dict>
 		</dict>
 		<key>main.c</key>
 		<dict>
 			<key>caret</key>
 			<dict>
 				<key>column</key>
-				<integer>0</integer>
+				<integer>62</integer>
 				<key>line</key>
-				<integer>343</integer>
+				<integer>205</integer>
 			</dict>
 			<key>firstVisibleColumn</key>
 			<integer>0</integer>
 			<key>firstVisibleLine</key>
-			<integer>321</integer>
+			<integer>185</integer>
 		</dict>
-		<key>rawuart.h</key>
+		<key>modeeprom.c</key>
+		<dict>
+			<key>caret</key>
+			<dict>
+				<key>column</key>
+				<integer>38</integer>
+				<key>line</key>
+				<integer>89</integer>
+			</dict>
+			<key>firstVisibleColumn</key>
+			<integer>0</integer>
+			<key>firstVisibleLine</key>
+			<integer>60</integer>
+		</dict>
+		<key>modeeprom.h</key>
 		<dict>
 			<key>caret</key>
 			<dict>
@@ -449,79 +777,188 @@
 			<key>firstVisibleColumn</key>
 			<integer>0</integer>
 			<key>firstVisibleLine</key>
-			<integer>0</integer>
+			<integer>2</integer>
 		</dict>
-		<key>startup.c</key>
+		<key>modules.c</key>
 		<dict>
 			<key>caret</key>
 			<dict>
 				<key>column</key>
-				<integer>13</integer>
-				<key>line</key>
-				<integer>229</integer>
-			</dict>
-			<key>columnSelection</key>
-			<false/>
-			<key>firstVisibleColumn</key>
-			<integer>0</integer>
-			<key>firstVisibleLine</key>
-			<integer>92</integer>
-			<key>selectFrom</key>
-			<dict>
-				<key>column</key>
-				<integer>4</integer>
-				<key>line</key>
-				<integer>229</integer>
-			</dict>
-			<key>selectTo</key>
-			<dict>
-				<key>column</key>
-				<integer>13</integer>
-				<key>line</key>
-				<integer>229</integer>
-			</dict>
-		</dict>
-		<key>uart.c</key>
-		<dict>
-			<key>caret</key>
-			<dict>
-				<key>column</key>
-				<integer>37</integer>
-				<key>line</key>
-				<integer>85</integer>
-			</dict>
-			<key>firstVisibleColumn</key>
-			<integer>0</integer>
-			<key>firstVisibleLine</key>
-			<integer>62</integer>
-		</dict>
-		<key>utils/ustdlib.h</key>
-		<dict>
-			<key>caret</key>
-			<dict>
-				<key>column</key>
-				<integer>6</integer>
+				<integer>60</integer>
 				<key>line</key>
 				<integer>79</integer>
 			</dict>
 			<key>firstVisibleColumn</key>
 			<integer>0</integer>
 			<key>firstVisibleLine</key>
-			<integer>75</integer>
+			<integer>66</integer>
+		</dict>
+		<key>rawuart.c</key>
+		<dict>
+			<key>caret</key>
+			<dict>
+				<key>column</key>
+				<integer>50</integer>
+				<key>line</key>
+				<integer>66</integer>
+			</dict>
+			<key>firstVisibleColumn</key>
+			<integer>0</integer>
+			<key>firstVisibleLine</key>
+			<integer>36</integer>
+		</dict>
+		<key>relay.c</key>
+		<dict>
+			<key>caret</key>
+			<dict>
+				<key>column</key>
+				<integer>17</integer>
+				<key>line</key>
+				<integer>36</integer>
+			</dict>
+			<key>firstVisibleColumn</key>
+			<integer>0</integer>
+			<key>firstVisibleLine</key>
+			<integer>0</integer>
+		</dict>
+		<key>telnetd.c</key>
+		<dict>
+			<key>caret</key>
+			<dict>
+				<key>column</key>
+				<integer>2</integer>
+				<key>line</key>
+				<integer>313</integer>
+			</dict>
+			<key>firstVisibleColumn</key>
+			<integer>0</integer>
+			<key>firstVisibleLine</key>
+			<integer>283</integer>
+		</dict>
+		<key>telnetd.h</key>
+		<dict>
+			<key>caret</key>
+			<dict>
+				<key>column</key>
+				<integer>0</integer>
+				<key>line</key>
+				<integer>24</integer>
+			</dict>
+			<key>firstVisibleColumn</key>
+			<integer>0</integer>
+			<key>firstVisibleLine</key>
+			<integer>0</integer>
+		</dict>
+		<key>uart.c</key>
+		<dict>
+			<key>caret</key>
+			<dict>
+				<key>column</key>
+				<integer>24</integer>
+				<key>line</key>
+				<integer>95</integer>
+			</dict>
+			<key>firstVisibleColumn</key>
+			<integer>0</integer>
+			<key>firstVisibleLine</key>
+			<integer>79</integer>
+		</dict>
+		<key>utils/cmdline.h</key>
+		<dict>
+			<key>caret</key>
+			<dict>
+				<key>column</key>
+				<integer>50</integer>
+				<key>line</key>
+				<integer>38</integer>
+			</dict>
+			<key>columnSelection</key>
+			<false/>
+			<key>firstVisibleColumn</key>
+			<integer>0</integer>
+			<key>firstVisibleLine</key>
+			<integer>0</integer>
+			<key>selectFrom</key>
+			<dict>
+				<key>column</key>
+				<integer>0</integer>
+				<key>line</key>
+				<integer>38</integer>
+			</dict>
+			<key>selectTo</key>
+			<dict>
+				<key>column</key>
+				<integer>50</integer>
+				<key>line</key>
+				<integer>38</integer>
+			</dict>
+		</dict>
+		<key>utils/vstdlib.h</key>
+		<dict>
+			<key>caret</key>
+			<dict>
+				<key>column</key>
+				<integer>51</integer>
+				<key>line</key>
+				<integer>42</integer>
+			</dict>
+			<key>firstVisibleColumn</key>
+			<integer>0</integer>
+			<key>firstVisibleLine</key>
+			<integer>0</integer>
+		</dict>
+		<key>web.c</key>
+		<dict>
+			<key>caret</key>
+			<dict>
+				<key>column</key>
+				<integer>24</integer>
+				<key>line</key>
+				<integer>253</integer>
+			</dict>
+			<key>columnSelection</key>
+			<false/>
+			<key>firstVisibleColumn</key>
+			<integer>0</integer>
+			<key>firstVisibleLine</key>
+			<integer>187</integer>
+			<key>selectFrom</key>
+			<dict>
+				<key>column</key>
+				<integer>12</integer>
+				<key>line</key>
+				<integer>253</integer>
+			</dict>
+			<key>selectTo</key>
+			<dict>
+				<key>column</key>
+				<integer>24</integer>
+				<key>line</key>
+				<integer>253</integer>
+			</dict>
 		</dict>
 	</dict>
 	<key>openDocuments</key>
 	<array>
 		<string>uart.c</string>
-		<string>lwiplib.h</string>
 		<string>LWIPStack.c</string>
-		<string>LuminaryMicro/driverlib/debug.h</string>
-		<string>ETHIsr.c</string>
-		<string>lwipopts.h</string>
-		<string>console.c</string>
-		<string>utils/ustdlib.h</string>
+		<string>utils/cmdline.h</string>
 		<string>main.c</string>
+		<string>utils/vstdlib.h</string>
+		<string>LuminaryMicro/driverlib/uart.h</string>
+		<string>telnetd.h</string>
+		<string>Makefile</string>
+		<string>modeeprom.h</string>
+		<string>modeeprom.c</string>
+		<string>LuminaryMicro/driverlib/i2c.h</string>
+		<string>console.c</string>
+		<string>modules.c</string>
+		<string>telnetd.c</string>
+		<string>FreeRTOS/Source/include/queue.h</string>
+		<string>FreeRTOS/Source/queue.c</string>
 		<string>FreeRTOSConfig.h</string>
+		<string>rawuart.c</string>
+		<string>web.c</string>
 	</array>
 	<key>shellVariables</key>
 	<array>
@@ -545,6 +982,6 @@
 	<key>showFileHierarchyDrawer</key>
 	<false/>
 	<key>windowFrame</key>
-	<string>{{110, 128}, {1220, 1030}}</string>
+	<string>{{173, 7}, {1222, 1087}}</string>
 </dict>
 </plist>

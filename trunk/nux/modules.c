@@ -53,7 +53,7 @@ static const unsigned long port_reset_pin[4] = {
 };
 
 void modules_init() {
-	I2C0_init();
+	MODEE_init();
 	for(size_t i = MODULE1; i <= MODULE4; i++)	{
 		module[i]=NULL;
 		module_init(i);
@@ -76,8 +76,8 @@ void module_init(unsigned short module_idx) {
 	header = (struct module_info *)pvPortMalloc(sizeof(struct module_info));
 	uart = (struct uart_profile *)pvPortMalloc(sizeof(struct uart_profile));
 
-	if(I2C_exists(i2c_addresses[module_idx])) {
-		I2C_read(i2c_addresses[module_idx], (unsigned char *) header, sizeof(struct module_info), 0);
+	if(MODEE_exists(i2c_addresses[module_idx])) {
+		MODEE_read(i2c_addresses[module_idx], (unsigned char *) header, sizeof(struct module_info), 0);
 		crc_sum=crcSlow((unsigned char *)header, sizeof(struct module_info)-sizeof(header->crc));
 		if(crc_sum == header->crc) {
 
@@ -88,7 +88,7 @@ void module_init(unsigned short module_idx) {
 
 			if(header->profile == PROFILE_UART) {
 				uart_config = (struct uart_info *)pvPortMalloc(sizeof(struct uart_info));
-				I2C_read(i2c_addresses[module_idx], (unsigned char *) uart, sizeof(struct uart_profile), sizeof(struct module_info));
+				MODEE_read(i2c_addresses[module_idx], (unsigned char *) uart, sizeof(struct uart_profile), sizeof(struct module_info));
 				if(uart->profile == PROFILE_UART) {
 					uart_config->baud   = uart->baud;
 					uart_config->config = uart->config;
@@ -115,7 +115,7 @@ void module_init(unsigned short module_idx) {
 				module[module_idx] = (unsigned char *)uart_config;
 			} else if (header->profile == PROFILE_RELAY) {
 				relay = (struct relay_info *)pvPortMalloc(sizeof(struct relay_info));
-				I2C_read(i2c_addresses[module_idx], (unsigned char *) relay, sizeof(struct relay_info), sizeof(struct module_info));
+				MODEE_read(i2c_addresses[module_idx], (unsigned char *) relay, sizeof(struct relay_info), sizeof(struct module_info));
 				if(relay->profile != PROFILE_RELAY) {
 					relay->profile = PROFILE_RELAY;
 					relay->start_value    = 0;
