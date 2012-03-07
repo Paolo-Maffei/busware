@@ -29,7 +29,7 @@ static const unsigned char i2c_addresses[4] = {
 	SLAVE_ADDRESS_MODULE1, SLAVE_ADDRESS_MODULE2, SLAVE_ADDRESS_MODULE3, SLAVE_ADDRESS_MODULE4
 };
 
-void I2C0_init();
+void MODEE_init();
 
 
 
@@ -41,7 +41,7 @@ void I2C0_init();
 // \param length is the length of the value to be written in the Eeprom
 // \param reg_address is the memory address which will be written at
 //*****************************************************************************
-void I2C_write(unsigned char slave_address, unsigned char *data, unsigned long length, unsigned short reg_address);
+void MODEE_write(unsigned char slave_address, unsigned char *data, unsigned long length, unsigned short reg_address);
 
 //*****************************************************************************
 // Non Interupt driven Read from the Eeprom device.
@@ -50,13 +50,13 @@ void I2C_write(unsigned char slave_address, unsigned char *data, unsigned long l
 // \param length is the length of the value to be read from Eeprom
 // \param reg_address is the memory address to be read
 //*****************************************************************************
-void I2C_read(unsigned char slave_address, unsigned char *data, unsigned long length, unsigned short reg_address);
+void MODEE_read(unsigned char slave_address, unsigned char *data, unsigned long length, unsigned short reg_address);
 
 //*****************************************************************************
 // Checks existance of the Eeprom device.
 // \param slave_address is the Control byte shift right once. (0x50=0xA0>>1)  
 // \return true if eeprom device exists
 //*****************************************************************************
-unsigned short I2C_exists(unsigned char slave_address);
+unsigned short MODEE_exists(unsigned char slave_address);
 
 #endif /* __MODEEPROM_H__ */

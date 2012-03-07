@@ -238,7 +238,7 @@ int cmd_module(int argc, char *argv[]) {
 	header = (struct module_info *)pvPortMalloc(sizeof(struct module_info));
 	
 	if (argc < 2) {
-		cmd_print("\r\ni2c exists: %d",I2C_exists(SLAVE_ADDRESS_MODULE1));
+		cmd_print("\r\ni2c exists: %d",MODEE_exists(SLAVE_ADDRESS_MODULE1));
 	} else {
 		if(ustrncmp(argv[1],"write",5) == 0) {
 			header->magic   = 0x3A;
@@ -250,10 +250,10 @@ int cmd_module(int argc, char *argv[]) {
 			header->dummy2  = 0;
 			header->crc     = crcSlow((unsigned char *)header, sizeof(struct module_info)-sizeof(header->crc));
 			
-			I2C_write(SLAVE_ADDRESS_MODULE1,(unsigned char *) header, sizeof(struct module_info), 0);
-			vTaskDelay(100 / portTICK_RATE_MS); // there must be a delay after write or avoid I2C_read()
+			MODEE_write(SLAVE_ADDRESS_MODULE1,(unsigned char *) header, sizeof(struct module_info), 0);
+			vTaskDelay(100 / portTICK_RATE_MS); // there must be a delay after write or avoid MODEE_read()
 		}
-		I2C_read(SLAVE_ADDRESS_MODULE1, (unsigned char *) header, sizeof(struct module_info), 0);
+		MODEE_read(SLAVE_ADDRESS_MODULE1, (unsigned char *) header, sizeof(struct module_info), 0);
 		cmd_print("\r\ni2c module magic: %X vendor: %X product: %X version: %X profile: %X modres: %X", header->magic, header->vendor, header->product, header->version, header->profile, header->modres);
 
 
@@ -433,13 +433,13 @@ int read_uartmode(int argc, char *argv[]) {
 void save_uart_config(unsigned char slave_address,unsigned long uart_speed, unsigned short config, unsigned short uart_base, unsigned short buf_size) {
 	struct uart_profile *profile;
 	
-	if(I2C_exists(slave_address)) {
+	if(MODEE_exists(slave_address)) {
 		profile = (struct uart_profile *)pvPortMalloc(sizeof(struct uart_profile));
 		profile->profile  = PROFILE_UART;
 		profile->baud   = uart_speed;
 		profile->config = config;
 		profile->buf_size = buf_size;
-		I2C_write(slave_address,(unsigned char *) profile, sizeof(struct uart_profile), sizeof(struct module_info)); // write after header
+		MODEE_write(slave_address,(unsigned char *) profile, sizeof(struct uart_profile), sizeof(struct module_info)); // write after header
 		vPortFree(profile);
 	} else {
 		cmd_print("\r\n Module %d doesn't exists.",uart_base);
