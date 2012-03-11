@@ -78,6 +78,10 @@ USB_ClassInfo_CDC_Device_t VirtualSerial_CDC_Interface =
  */
 int main(void)
 {
+	uint16_t ticks = 0;
+	uint16_t rep_mode = 0;
+	uint8_t  R_ON[10] = { 0x55, 0x00, 0x03, 0x00, 0x05, 0xA6, 0x09, 0x01, 0x01, 0x28 };
+
 	SetupHardware();
 
 	RingBuffer_InitBuffer(&USBtoUSART_Buffer, USBtoUSART_Buffer_Data, sizeof(USBtoUSART_Buffer_Data));
@@ -88,11 +92,14 @@ int main(void)
 
 	for (;;)
 	{
-	     if (USB_DeviceState == DEVICE_STATE_Configured) {
-		  PORTE |= _BV( 6 );
-	     } else {
-		  PORTE &= ~_BV( 6 );
-	     }
+		if (!rep_mode) {
+	     		if (USB_DeviceState == DEVICE_STATE_Configured) {
+				PORTE |= _BV( 6 );
+	     		} else {
+				PORTE &= ~_BV( 6 );
+	     		}
+		}
+
 		/* Only try to read in bytes from the CDC interface if the transmit buffer is not full */
 		if (!(RingBuffer_IsFull(&USBtoUSART_Buffer)))
 		{
@@ -109,6 +116,22 @@ int main(void)
 		{
 			/* Clear flush timer expiry flag */
 			TIFR0 |= (1 << TOV0);
+
+			// kid of ticks
+			if (ticks++>1000 && USB_DeviceState != DEVICE_STATE_Configured) {
+
+				if (rep_mode) {
+					if (ticks % 122 == 0)
+		  				PORTE ^= _BV( 6 );
+				} else {
+					// enter Repeater mode
+			        	for (uint8_t i = 0; i<10; i++)
+          					Serial_SendByte(R_ON[i]);
+					rep_mode = 1;
+				}
+	
+
+			};
 
 			/* Read bytes from the USART receive buffer into the USB IN endpoint */
 			while (BufferCount--)
