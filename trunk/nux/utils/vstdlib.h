@@ -46,6 +46,7 @@ extern char * ustrncpy(char * dest, const char * src, size_t n);
 extern unsigned long ustrtoul(const char * nptr, char ** endptr, int base);
 extern char * ustrstr(const char * s1, const char * s2);
 extern int ustrncmp(const char * s1, const char * s2, size_t n);
+extern char * ustrncat(char *s1, const char * s2, size_t n);
 
 #ifdef __cplusplus
 }
