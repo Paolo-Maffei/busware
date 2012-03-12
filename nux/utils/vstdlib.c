@@ -431,3 +431,16 @@ int ustrncmp(const char * s1, const char * s2, size_t n)
         }
         return __res;
 }
+
+char * ustrncat(char *s1, const char * s2, size_t n) {
+	char *s = s1;
+	while (*s != 0)
+		s++;
+	while (n != 0 && (*s = *s2++) != 0) {
+		n--;
+		s++;
+	}
+	if (*s != 0)
+		*s = 0;
+	return s1;
+}

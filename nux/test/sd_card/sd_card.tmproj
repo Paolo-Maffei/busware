@@ -8,132 +8,102 @@
 	<array>
 		<dict>
 			<key>filename</key>
-			<string>../../modeeprom.c</string>
+			<string>Makefile</string>
 			<key>lastUsed</key>
-			<date>2012-03-07T16:17:36Z</date>
+			<date>2012-03-09T11:42:55Z</date>
 		</dict>
 		<dict>
 			<key>filename</key>
-			<string>../../modeeprom.h</string>
+			<string>standalone.ld</string>
 			<key>lastUsed</key>
-			<date>2012-03-05T16:17:38Z</date>
+			<date>2012-03-08T12:43:01Z</date>
 		</dict>
 		<dict>
 			<key>filename</key>
 			<string>main.c</string>
 			<key>lastUsed</key>
-			<date>2012-03-08T12:20:27Z</date>
+			<date>2012-03-09T12:40:19Z</date>
+			<key>selected</key>
+			<true/>
+		</dict>
+		<dict>
+			<key>filename</key>
+			<string>FreeRTOSConfig.h</string>
+			<key>lastUsed</key>
+			<date>2012-03-09T12:40:19Z</date>
 		</dict>
 		<dict>
 			<key>filename</key>
 			<string>startup.c</string>
 			<key>lastUsed</key>
-			<date>2012-03-05T14:58:36Z</date>
+			<date>2012-03-09T11:57:12Z</date>
 		</dict>
 		<dict>
 			<key>filename</key>
 			<string>uart.c</string>
 			<key>lastUsed</key>
-			<date>2012-03-05T15:12:14Z</date>
-		</dict>
-		<dict>
-			<key>filename</key>
-			<string>Makefile</string>
-			<key>lastUsed</key>
-			<date>2012-03-05T15:57:38Z</date>
+			<date>2012-03-08T12:45:56Z</date>
 		</dict>
 	</array>
 	<key>fileHierarchyDrawerWidth</key>
 	<integer>200</integer>
 	<key>metaData</key>
 	<dict>
-		<key>../../modeeprom.c</key>
+		<key>FreeRTOSConfig.h</key>
 		<dict>
 			<key>caret</key>
 			<dict>
 				<key>column</key>
-				<integer>33</integer>
+				<integer>20</integer>
 				<key>line</key>
-				<integer>89</integer>
+				<integer>44</integer>
 			</dict>
 			<key>firstVisibleColumn</key>
 			<integer>0</integer>
 			<key>firstVisibleLine</key>
-			<integer>7</integer>
-		</dict>
-		<key>../../modeeprom.h</key>
-		<dict>
-			<key>caret</key>
-			<dict>
-				<key>column</key>
-				<integer>116</integer>
-				<key>line</key>
-				<integer>52</integer>
-			</dict>
-			<key>columnSelection</key>
-			<false/>
-			<key>firstVisibleColumn</key>
 			<integer>0</integer>
-			<key>firstVisibleLine</key>
-			<integer>0</integer>
-			<key>selectFrom</key>
-			<dict>
-				<key>column</key>
-				<integer>5</integer>
-				<key>line</key>
-				<integer>52</integer>
-			</dict>
-			<key>selectTo</key>
-			<dict>
-				<key>column</key>
-				<integer>116</integer>
-				<key>line</key>
-				<integer>52</integer>
-			</dict>
 		</dict>
 		<key>Makefile</key>
 		<dict>
 			<key>caret</key>
 			<dict>
 				<key>column</key>
-				<integer>13</integer>
+				<integer>17</integer>
 				<key>line</key>
-				<integer>40</integer>
+				<integer>44</integer>
 			</dict>
 			<key>firstVisibleColumn</key>
 			<integer>0</integer>
 			<key>firstVisibleLine</key>
-			<integer>15</integer>
+			<integer>26</integer>
 		</dict>
 		<key>main.c</key>
 		<dict>
 			<key>caret</key>
 			<dict>
 				<key>column</key>
-				<integer>0</integer>
+				<integer>12</integer>
 				<key>line</key>
-				<integer>184</integer>
+				<integer>412</integer>
 			</dict>
-			<key>columnSelection</key>
-			<false/>
 			<key>firstVisibleColumn</key>
 			<integer>0</integer>
 			<key>firstVisibleLine</key>
-			<integer>133</integer>
-			<key>selectFrom</key>
+			<integer>424</integer>
+		</dict>
+		<key>standalone.ld</key>
+		<dict>
+			<key>caret</key>
 			<dict>
 				<key>column</key>
-				<integer>0</integer>
+				<integer>35</integer>
 				<key>line</key>
-				<integer>158</integer>
+				<integer>13</integer>
 			</dict>
-			<key>selectTo</key>
-			<dict>
-				<key>column</key>
-				<integer>0</integer>
-				<key>line</key>
-				<integer>184</integer>
-			</dict>
+			<key>firstVisibleColumn</key>
+			<integer>0</integer>
+			<key>firstVisibleLine</key>
+			<integer>0</integer>
 		</dict>
 		<key>startup.c</key>
 		<dict>
@@ -142,12 +112,12 @@
 				<key>column</key>
 				<integer>21</integer>
 				<key>line</key>
-				<integer>114</integer>
+				<integer>117</integer>
 			</dict>
 			<key>firstVisibleColumn</key>
 			<integer>0</integer>
 			<key>firstVisibleLine</key>
-			<integer>84</integer>
+			<integer>87</integer>
 		</dict>
 		<key>uart.c</key>
 		<dict>
@@ -156,37 +126,21 @@
 				<key>column</key>
 				<integer>0</integer>
 				<key>line</key>
-				<integer>137</integer>
+				<integer>93</integer>
 			</dict>
-			<key>columnSelection</key>
-			<false/>
 			<key>firstVisibleColumn</key>
 			<integer>0</integer>
 			<key>firstVisibleLine</key>
-			<integer>78</integer>
-			<key>selectFrom</key>
-			<dict>
-				<key>column</key>
-				<integer>68</integer>
-				<key>line</key>
-				<integer>137</integer>
-			</dict>
-			<key>selectTo</key>
-			<dict>
-				<key>column</key>
-				<integer>0</integer>
-				<key>line</key>
-				<integer>137</integer>
-			</dict>
+			<integer>80</integer>
 		</dict>
 	</dict>
 	<key>openDocuments</key>
 	<array>
 		<string>Makefile</string>
 		<string>uart.c</string>
+		<string>standalone.ld</string>
 		<string>main.c</string>
-		<string>../../modeeprom.h</string>
-		<string>../../modeeprom.c</string>
+		<string>FreeRTOSConfig.h</string>
 		<string>startup.c</string>
 	</array>
 	<key>shellVariables</key>
@@ -195,7 +149,7 @@
 			<key>enabled</key>
 			<true/>
 			<key>value</key>
-			<string>/Users/mueck/dev/busware/nux/test/modeeprom</string>
+			<string>/Users/mueck/dev/busware/nux/test/sd_card</string>
 			<key>variable</key>
 			<string>TM_PROJECT_DIRECTORY</string>
 		</dict>
@@ -203,6 +157,6 @@
 	<key>showFileHierarchyDrawer</key>
 	<true/>
 	<key>windowFrame</key>
-	<string>{{288, 49}, {1384, 1110}}</string>
+	<string>{{265, 18}, {1384, 1110}}</string>
 </dict>
 </plist>
