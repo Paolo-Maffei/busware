@@ -49,7 +49,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "softeeprom.h"
 #include "console.h"
 #include "modules.h"
-
+#include "rtc.h"
 
 #define mainBASIC_TELNET_STACK_SIZE            ( configMINIMAL_STACK_SIZE * 2 )
 
@@ -227,6 +227,8 @@ void prvSetupHardware( void ){
     WatchdogResetEnable(WATCHDOG0_BASE);
     WatchdogEnable(WATCHDOG0_BASE);
 
+
+	rtc_init();
 	modules_init();
 
 }

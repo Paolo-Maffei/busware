@@ -49,6 +49,7 @@ SOURCE=	main.c \
 		console.c \
 		i2ceeprom.c \
 		modules.c \
+		rtc.c \
 		relay.c \
 		web.c \
 		softeeprom/softeeprom.c \

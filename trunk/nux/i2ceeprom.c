@@ -25,7 +25,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "driverlib/i2c.h"
 
 
-void MODEE_init() {
+void I2CEE_init() {
 
     // The I2C0 peripheral must be enabled before use.
     //
@@ -91,7 +91,7 @@ void modee_write_block(unsigned char slave_address, unsigned char *data, unsigne
 }
 
 
-void MODEE_write(unsigned char slave_address, unsigned char *data, unsigned long length, unsigned short reg_address) {
+void I2CEE_write(unsigned char slave_address, unsigned char *data, unsigned long length, unsigned short reg_address) {
 	unsigned long blklen;
 	unsigned short offset;
 	offset = 0;
@@ -110,7 +110,7 @@ void MODEE_write(unsigned char slave_address, unsigned char *data, unsigned long
 // \param slave_address is the Control byte shift right once. (0x50=0xA0>>1)  
 // \param reg_address is the memory address to be read
 //*****************************************************************************
-void MODEE_read(unsigned char slave_address, unsigned char *data, unsigned long length, unsigned short reg_address){
+void I2CEE_read(unsigned char slave_address, unsigned char *data, unsigned long length, unsigned short reg_address){
 	int i;
      unsigned long ret = 0;
     ///////////////////////////////////////////////////////////////////
@@ -147,7 +147,7 @@ void MODEE_read(unsigned char slave_address, unsigned char *data, unsigned long 
     *(data + i) = ret;
 }
 
-unsigned short MODEE_exists(unsigned char slave_address) {
+unsigned short I2CEE_exists(unsigned char slave_address) {
 	unsigned long ret = 0;
 	
     I2CMasterSlaveAddrSet(I2C0_MASTER_BASE, slave_address, false);
