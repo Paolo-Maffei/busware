@@ -35,7 +35,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "console.h"
 
 #include "LWIPStack.h"
-#include "modeeprom.h"
+#include "i2ceeprom.h"
 #include "modules.h"
 #include "crc.h"
 #include "relay.h"

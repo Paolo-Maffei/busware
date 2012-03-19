@@ -32,7 +32,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "driverlib/interrupt.h"
 
 #include "modules.h"
-#include "modeeprom.h"
+#include "i2ceeprom.h"
 #include "crc.h"
 #include "relay.h"
 

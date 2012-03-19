@@ -47,7 +47,7 @@ SOURCE=	main.c \
 		startup.c \
 		uart.c \
 		console.c \
-		modeeprom.c \
+		i2ceeprom.c \
 		modules.c \
 		relay.c \
 		web.c \

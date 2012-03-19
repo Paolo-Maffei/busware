@@ -51,7 +51,7 @@
 #include "telnetd.h"
 #include "rawuart.h"
 #include "modules.h"
-#include "modeeprom.h"
+#include "i2ceeprom.h"
 #include "web.h"
 #include "ETHIsr.h"
 #include "LWIPStack.h"
