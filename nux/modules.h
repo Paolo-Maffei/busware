@@ -34,7 +34,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #define MAGIC 0x3A
 
-// Before you amend module_info or uart_profile rewite MODEE_write!
+// Before you amend module_info or uart_profile rewite I2CEE_write!
 struct module_info {
 	unsigned short magic;
 	unsigned short vendor;

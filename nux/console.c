@@ -29,6 +29,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include "driverlib/uart.h"
 #include "driverlib/flash.h"
+#include "driverlib/hibernate.h"
 #include "utils/cmdline.h"
 #include "utils/vstdlib.h"
 #include "softeeprom.h"
@@ -39,6 +40,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "modules.h"
 #include "crc.h"
 #include "relay.h"
+
+#include "time.h"
 
 extern void UARTSend(unsigned long ulBase, const char *pucBuffer, unsigned short ulCount);
 extern int UARTgets(unsigned long ulBase, char *pcBuf, unsigned long ulLen);
@@ -238,7 +241,7 @@ int cmd_module(int argc, char *argv[]) {
 	header = (struct module_info *)pvPortMalloc(sizeof(struct module_info));
 	
 	if (argc < 2) {
-		cmd_print("\r\ni2c exists: %d",MODEE_exists(SLAVE_ADDRESS_MODULE1));
+		cmd_print("\r\ni2c exists: %d",I2CEE_exists(SLAVE_ADDRESS_MODULE1));
 	} else {
 		if(ustrncmp(argv[1],"write",5) == 0) {
 			header->magic   = 0x3A;
@@ -250,10 +253,10 @@ int cmd_module(int argc, char *argv[]) {
 			header->dummy2  = 0;
 			header->crc     = crcSlow((unsigned char *)header, sizeof(struct module_info)-sizeof(header->crc));
 			
-			MODEE_write(SLAVE_ADDRESS_MODULE1,(unsigned char *) header, sizeof(struct module_info), 0);
-			vTaskDelay(100 / portTICK_RATE_MS); // there must be a delay after write or avoid MODEE_read()
+			I2CEE_write(SLAVE_ADDRESS_MODULE1,(unsigned char *) header, sizeof(struct module_info), 0);
+			vTaskDelay(100 / portTICK_RATE_MS); // there must be a delay after write or avoid I2CEE_read()
 		}
-		MODEE_read(SLAVE_ADDRESS_MODULE1, (unsigned char *) header, sizeof(struct module_info), 0);
+		I2CEE_read(SLAVE_ADDRESS_MODULE1, (unsigned char *) header, sizeof(struct module_info), 0);
 		cmd_print("\r\ni2c module magic: %X vendor: %X product: %X version: %X profile: %X modres: %X", header->magic, header->vendor, header->product, header->version, header->profile, header->modres);
 
 
@@ -433,13 +436,13 @@ int read_uartmode(int argc, char *argv[]) {
 void save_uart_config(unsigned char slave_address,unsigned long uart_speed, unsigned short config, unsigned short uart_base, unsigned short buf_size) {
 	struct uart_profile *profile;
 	
-	if(MODEE_exists(slave_address)) {
+	if(I2CEE_exists(slave_address)) {
 		profile = (struct uart_profile *)pvPortMalloc(sizeof(struct uart_profile));
 		profile->profile  = PROFILE_UART;
 		profile->baud   = uart_speed;
 		profile->config = config;
 		profile->buf_size = buf_size;
-		MODEE_write(slave_address,(unsigned char *) profile, sizeof(struct uart_profile), sizeof(struct module_info)); // write after header
+		I2CEE_write(slave_address,(unsigned char *) profile, sizeof(struct uart_profile), sizeof(struct module_info)); // write after header
 		vPortFree(profile);
 	} else {
 		cmd_print("\r\n Module %d doesn't exists.",uart_base);
@@ -570,6 +573,35 @@ int cmd_help(int argc, char *argv[]) {
     return(0);
 }
 
+
+int cmd_rtc(int argc, char *argv[]) {
+	char *param;
+	time_t seconds;
+	struct tm *now;
+	
+	if(argc > 1) {
+		param = argv[1];
+		now = (struct tm *)pvPortMalloc(sizeof(struct tm));
+	    now->tm_year = ustrtoul(param,&param,0) - 1900;
+		now->tm_mon= ustrtoul(param+1,&param,0) -1;
+		now->tm_mday= ustrtoul(param+1,&param,0);
+		now->tm_hour= ustrtoul(param+1,&param,0);
+		now->tm_min= ustrtoul(param+1,&param,0);
+		now->tm_sec= ustrtoul(param+1,&param,0);
+		seconds = mktime(now);
+		vPortFree(now);
+		HibernateRTCSet(seconds);
+	} else {
+		HibernateDataGet(&seconds, 1);
+		cmd_print("%d\r\n",seconds);
+
+		seconds = HibernateRTCGet();
+		now = localtime(&seconds);
+		cmd_print("%d-%0d-%0dT%0d:%0d:%0d",now->tm_year + 1900,now->tm_mon+1,now->tm_mday,now->tm_hour,now->tm_min,now->tm_sec);
+	}
+	return(0);
+}
+
 /* This function stops clearing the watchdog interrupt. As a consequence
 the board will perform a reset.
 */
@@ -649,6 +681,7 @@ cmdline_entry g_sCmdTable[] = {
     { "ipmode", cmd_ipmode, ": set/display ipmode - Usage: ipmode [dhcp|static] [addr mask gateway]" },
     { "uart",   cmd_uartmode, ": set/display uart - uart  <id> <speed> <len> <stop> <parity> [buf]" },
     { "stats", cmd_stats, ": displays some statistics" },
+	{ "rtc", cmd_rtc, "set/display rtc - usage: rtc [yyyy-mm-ddThh:mm:ss]"},
     { "quit",   cmd_quit,   "    : Quit console" },
 
     { 0, 0, 0 }
