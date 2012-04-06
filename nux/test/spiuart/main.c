@@ -26,16 +26,45 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "driverlib/interrupt.h"
 #include "driverlib/sysctl.h"
 #include "driverlib/gpio.h"
+#include "driverlib/ssi.h"
 
 #include "driverlib/uart.h"
 #include "driverlib/debug.h"
 
 #include "utils/vstdlib.h"
-#include "i2ceeprom.h"
+
+
+// SSI port
+#define UART4_SSI_BASE            SSI1_BASE
+#define UART4_SSI_SYSCTL_PERIPH   SYSCTL_PERIPH_SSI1
+
+// GPIO for SSI pins
+#define UART4_GPIO_PORT_BASE      GPIO_PORTE_BASE
+#define UART4_GPIO_SYSCTL_PERIPH  SYSCTL_PERIPH_GPIOE
+#define UART4_SSI_CLK             GPIO_PIN_0
+#define UART4_SSI_TX              GPIO_PIN_3
+#define UART4_SSI_RX              GPIO_PIN_2
+#define UART4_SSI_FSS             GPIO_PIN_1
+#define UART4_SSI_PINS            (UART4_SSI_TX | UART4_SSI_RX | UART4_SSI_CLK)
+
+// GPIO for uart chip select
+#define UART4_CS_GPIO_PORT_BASE      GPIO_PORTE_BASE
+#define UART4_CS_GPIO_SYSCTL_PERIPH  SYSCTL_PERIPH_GPIOE
+#define UART4_CS                     GPIO_PIN_4
+
+#define THR    (0x00)    // transmit holding register
+#define RHR    (0x00)    // recv holding register
+#define MSR    (0x30)    // modem status register
+#define LSR    (0x28)    // line status register
+
+#define LCR    (0x18)    // line control register
+#define DLL    (0x00)    // divisor latch LSB
+#define DLH    (0x08)    // divisor latch HSB
+
 
 static const char * const g_pcHex = "0123456789abcdef";
 
-const char * const welcome = "\r\nnux i2ceeprom test V1.0";
+const char * const welcome = "\r\nnux spiuart test V0.0";
 
 static void prvSetupHardware( void ); // configure the hardware
 
@@ -67,87 +96,126 @@ volatile unsigned long ulLoop;
     }
 }
 
-int test_init() {
-
-	I2CEE_init();
-	INFO("test_init  ..... PASS");
-
-	return 1;
+// asserts the CS pin to the uart
+static void SELECT (void) {
+    GPIOPinWrite(UART4_CS_GPIO_PORT_BASE, UART4_CS, 0);
 }
 
-int test_module_exists() {
-	short int result;
-	
-	result = I2CEE_exists(SLAVE_ADDRESS_MODULE1);
-	if( result == 1) {
-		INFO("test_module_exists .... PASS");
-	} else {
-		INFO("test_module_exists .... FAIL");
-	}
-	
-	return result;
+// de-asserts the CS pin to the uart
+static void DESELECT (void) {
+    GPIOPinWrite(UART4_CS_GPIO_PORT_BASE, UART4_CS, UART4_CS);
 }
 
-int test_write_read() {
-	unsigned char buf[20];
-	unsigned char inbuf[20];
-	
-	buf[0]='1';
-	buf[1]='2';
-	buf[2]='3';
-	buf[3]='4';
-	buf[4]=0;
-	usnprintf((char *)&inbuf,20,"xxxxxxxxxxxxxxxxxxxxxxxxxxx");
+static unsigned short rcvr_spi (void) {
+    unsigned long rcvdat;
 
-	I2CEE_write(SLAVE_ADDRESS_MODULE1,(unsigned char *) &buf, 5, 0);
-	
-	I2CEE_read(SLAVE_ADDRESS_MODULE1, (unsigned char *) &inbuf, 5, 0);
-	if(ustrncmp((const char *)&buf,(const char *)&inbuf,5) == 0)	{
-		INFO("test_write_read .... PASS");
-	} else {
-		INFO("test_write_read .... FAIL");
-		INFO("data: %s",&inbuf);
-	}
+//    SSIDataPut(UART4_SSI_BASE, 0xFF); /* write dummy data */
+    SSIDataGet(UART4_SSI_BASE, &rcvdat); /* read data frm rx fifo */
 
-	return 1;
+    return (unsigned short)rcvdat;
 }
 
 
-int test_write_read_long() {
-	unsigned char buf[20];
-	unsigned char inbuf[20];
-	
-	usnprintf((char *)&buf,20,"Long String with >16 char.");
-	usnprintf((char *)&inbuf,20,"xxxxxxxxxxxxxxxxxxxxxxxxxxx");
+static unsigned short xmit_spi (unsigned short dat) {
+    unsigned long rcvdat;
+    SSIDataPut(UART4_SSI_BASE, dat); /* Write the data to the tx fifo */
+    SSIDataGet(UART4_SSI_BASE, &rcvdat); /* flush data read during the write */
 
-	I2CEE_write(SLAVE_ADDRESS_MODULE1,(unsigned char *) &buf, 20, 0);
-	
-	I2CEE_read(SLAVE_ADDRESS_MODULE1, (unsigned char *) &inbuf, 20, 0);
-	if(ustrncmp((const char *)&buf,(const char *)&inbuf,5) == 0)	{
-		INFO("test_write_read_long .... PASS");
-	} else {
-		INFO("test_write_read_long .... FAIL");
-		INFO("data: %s",&inbuf);
+	return (unsigned short) rcvdat;
+}
+
+
+static unsigned short recv_command(unsigned short command) {
+    unsigned long rcvdat;
+
+    SSIDataPut(UART4_SSI_BASE, (0x80 | command)); 
+//    SSIDataPut(UART4_SSI_BASE, 0xFF); 
+    SSIDataGet(UART4_SSI_BASE, &rcvdat); /* flush data read during the write */
+	return (unsigned short)rcvdat;
+}
+
+static void spi_uart_send(unsigned long base, const char *buffer, unsigned short count) {
+	for(size_t i = 0; i < count; ++i)	{
+			xmit_spi(THR);
+			xmit_spi(*(buffer + i));
 	}
+}
 
-	return 1;
+
+
+void spi_uart_init(unsigned short uart_idx, unsigned long baud, unsigned short config) {
+	unsigned long divisor;
+
+
+	
+    /* Enable the peripherals used to drive the UART on SSI, and the CS */
+    SysCtlPeripheralEnable(UART4_SSI_SYSCTL_PERIPH);
+    SysCtlPeripheralEnable(UART4_GPIO_SYSCTL_PERIPH);
+    SysCtlPeripheralEnable(UART4_CS_GPIO_SYSCTL_PERIPH);
+
+	// set MOD_RES == Low
+	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOE);
+	GPIOPinTypeGPIOOutput(GPIO_PORTE_BASE, GPIO_PIN_5);
+	GPIOPinWrite(GPIO_PORTE_BASE, GPIO_PIN_5 , 1);
+
+
+    /* Configure the appropriate pins to be SSI instead of GPIO */
+    GPIOPinTypeSSI(UART4_GPIO_PORT_BASE, UART4_SSI_PINS);
+    GPIOPinTypeGPIOOutput(UART4_CS_GPIO_PORT_BASE, UART4_CS);
+    GPIOPadConfigSet(UART4_GPIO_PORT_BASE, UART4_SSI_PINS, GPIO_STRENGTH_4MA, GPIO_PIN_TYPE_STD_WPU);
+    GPIOPadConfigSet(UART4_CS_GPIO_PORT_BASE, UART4_CS, GPIO_STRENGTH_4MA, GPIO_PIN_TYPE_STD_WPU);
+
+	DESELECT();
+	
+    /* Configure the SSI1 port */
+    SSIConfigSetExpClk(UART4_SSI_BASE, SysCtlClockGet()/16, SSI_FRF_MOTO_MODE_0, SSI_MODE_MASTER, 400000, 8);
+    SSIEnable(UART4_SSI_BASE);
+/*
+	SELECT();
+	xmit_spi( LCR); // write to LCR
+	xmit_spi( 0x83 ); // write  8N1
+
+	divisor = 7372800 / baud / 16;
+	INFO("divisor %X",divisor);
+	xmit_spi(DLL); // write to DLL register
+	xmit_spi((unsigned short)divisor ); // low 
+	xmit_spi(DLH); // write to DLH register
+	xmit_spi( (unsigned short)(divisor >> 8) ); // low 
+	DESELECT();
+*/
 }
 
 
 int main( void ) {
 	char cmd_buf[10];
+	unsigned short data = 0;
 	
 	prvSetupHardware();
 	
 
 	for( ;; ) {
 		blinky(2);
+
 		INFO(welcome);
 		UARTgets(UART0_BASE,cmd_buf, 10);
-		test_init();
-		test_module_exists();
-		test_write_read();
-		test_write_read_long();
+		SELECT();
+	//	wait_ready();
+		data=recv_command(MSR);
+		INFO("reg MSR: %X", data);
+		
+		data=recv_command(LSR);
+		INFO("reg LSR: %X", data);
+
+		data = xmit_spi( LCR); // write to LCR
+		INFO("reg LCR: %X", data);
+		data = xmit_spi( 0x83); // write to LCR
+		INFO("data: %X", data);
+		
+//		for(size_t i = 0; i < 10; ++i)	{
+//			spi_uart_send(UART4_SSI_BASE,"ABDC",4);
+//		}
+
+		DESELECT();
 	}
 	return 0;
 }
@@ -175,12 +243,16 @@ void prvSetupHardware( void ){
     //
     GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE, GPIO_PIN_0);
 
+
+
     //
     // Enable processor interrupts.
     //
     IntMasterEnable();
 
 	uart_init(0, 115200, (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE | UART_CONFIG_PAR_NONE));
+
+	spi_uart_init(4, 115200, (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE | UART_CONFIG_PAR_NONE));
 
 }
 /*-----------------------------------------------------------*/

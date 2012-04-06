@@ -1,0 +1,12 @@
+# telnet localhost 4444
+halt
+sleep 200
+wait_halt
+flash probe 0
+flash info 0
+flash erase_address 0x1000 0x1f000
+sleep 200
+flash write_bank 0 /tmp/nux.bin 0x1000
+sleep 200
+reset run
+shutdown

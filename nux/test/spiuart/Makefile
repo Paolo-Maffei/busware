@@ -38,8 +38,7 @@ CFLAGS= -std=c99                                   \
 SOURCE=	main.c \
 		startup.c \
 		uart.c \
-		$(SRCHOME)/utils/vstdlib.c \
-		$(SRCHOME)/i2ceeprom.c
+		$(SRCHOME)/utils/vstdlib.c
 
 LIBS= $(SRCHOME)/$(LUMINARY_DRIVER_DIR)/arm-none-eabi-gcc/libdriver.a
 
