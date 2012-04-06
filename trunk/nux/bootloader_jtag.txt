@@ -1,0 +1,13 @@
+halt
+sleep 200
+wait_halt
+flash probe 0
+flash info 0
+flash erase_sector 0 0 127
+sleep 200
+stellaris mass_erase 0
+sleep 200
+flash write_bank 0 /tmp/boot_serial.bin 0
+sleep 200
+reset run
+shutdown
