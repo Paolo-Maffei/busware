@@ -52,24 +52,31 @@ static uint8_t      USARTtoUSB_Buffer_Data[128];
  *  passed to all CDC Class driver functions, so that multiple instances of the same class
  *  within a device can be differentiated from one another.
  */
-USB_ClassInfo_CDC_Device_t VirtualSerial_CDC_Interface = {
-     .Config = {
-	  .ControlInterfaceNumber         = 0,
-	  
-	  .DataINEndpointNumber           = CDC_TX_EPNUM,
-	  .DataINEndpointSize             = CDC_TXRX_EPSIZE,
-	  .DataINEndpointDoubleBank       = false,
-	  
-	  .DataOUTEndpointNumber          = CDC_RX_EPNUM,
-	  .DataOUTEndpointSize            = CDC_TXRX_EPSIZE,
-	  .DataOUTEndpointDoubleBank      = false,
-	  
-	  .NotificationEndpointNumber     = CDC_NOTIFICATION_EPNUM,
-	  .NotificationEndpointSize       = CDC_NOTIFICATION_EPSIZE,
-	  .NotificationEndpointDoubleBank = false,
-     },
-};
-
+USB_ClassInfo_CDC_Device_t VirtualSerial_CDC_Interface =
+        {
+                .Config =
+                        {
+                                .ControlInterfaceNumber         = 0,
+                                .DataINEndpoint                 =
+                                        {
+                                                .Address                = CDC_TX_EPADDR,
+                                                .Size                   = CDC_TXRX_EPSIZE,
+                                                .Banks                  = 1,
+                                        },
+                                .DataOUTEndpoint                =
+                                        {
+                                                .Address                = CDC_RX_EPADDR,
+                                                .Size                   = CDC_TXRX_EPSIZE,
+                                                .Banks                  = 1,
+                                        },
+                                .NotificationEndpoint           =
+                                        {
+                                                .Address                = CDC_NOTIFICATION_EPADDR,
+                                                .Size                   = CDC_NOTIFICATION_EPSIZE,
+                                                .Banks                  = 1,
+                                        },
+                        },
+        };
 
 /** Main program entry point. This routine contains the overall program flow, including initial
  *  setup of all components and the main program loop.
