@@ -29,7 +29,7 @@ IPATH+=$(LWIP_SOURCE_DIR)/contrib/port/FreeRTOS/LM3S
 CFLAGS= -std=c99                                   \
 		-Wall                                      \
 		-D GCC_ARMCM3                              \
-		-D PART_LM3S611                            \
+		-D PART_LM3S6611                           \
 		-D inline=                                 \
 		-mthumb                                    \
 		-mcpu=cortex-m3                            \

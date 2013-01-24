@@ -44,7 +44,7 @@ void I2CEE_init() {
     // configure the GPIO pins for I2C operation, setting them to
     // open-drain operation with weak pull-ups.
     //
-    GPIOPinTypeI2C(GPIO_PORTB_BASE, I2CSCL_PIN | I2CSDA_PIN);
+    GPIOPinTypeI2C(GPIO_PORTB_BASE, I2C0SCL_PIN | I2C0SDA_PIN);
 
 
     // Enable and initialize the I2C0 master module.  Use the system clock for
