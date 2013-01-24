@@ -26,11 +26,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 void rtc_init() {
     unsigned long count = 0;
 
-	// Enable the Hibernation module.
+    // Enable the Hibernation module.
     //
     SysCtlPeripheralEnable(SYSCTL_PERIPH_HIBERNATE);
     
-	// Per an erratum, sometimes on wake the Hibernation module control
+    // Per an erratum, sometimes on wake the Hibernation module control
     // register will be cleared when it should not be.  As a workaround a
     // location in the non-volatile data area can be read instead.  This data
     // area is cleared to 0 on reset, so if the first location is non-zero then
@@ -38,7 +38,6 @@ void rtc_init() {
     // Hibernation module which will ensure that the control register bits have
     // the proper value.
     //
-    HibernateDataGet(&count, 1);
 
     //
     // Enable the Hibernation module.  This should always be called, even if
@@ -49,14 +48,17 @@ void rtc_init() {
     HibernateClockSelect(HIBERNATE_CLOCK_SEL_RAW);
 
     // Allow time for the crystal to power up.
-    SysCtlDelay(SysCtlClockGet() / 500);;
+    //SysCtlDelay(SysCtlClockGet() / 500);;
 
     //
     // Increment the hibernation count, and store it in the battery backed
     // memory.
     //
-    count=5;
-    HibernateDataSet(&count, 1);
-
     HibernateRTCEnable();
+
+    HibernateRTCSet(0);
+
+    //count=5;
+    //HibernateDataSet(&count, 1);
+    //HibernateDataGet(&count, 1);
 }
