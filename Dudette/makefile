@@ -35,26 +35,62 @@
 #
 
 #DEVICE=CSM_1284P
+#DEVICE=CSM_644P
+#DEVICE=ZCSM_324P
 #DEVICE=ZCSM_1284P
 #DEVICE=RWE_PSS
-DEVICE=HM_LC_Sw1_PI
+#DEVICE=HM_LC_Sw1_PI
+#DEVICE=PWMBOX
+DEVICE=CUNO2
 
 # end of user defined values
 
 ifeq ($(DEVICE), CSM_1284P)
 MCU=atmega1284p
 F_CPU=8000000
-BOOTSIZE=2048
+BOOTSIZE=4096
 FUSES=-U lfuse:w:0xd6:m -U hfuse:w:0xd8:m -U lock:w:0x2f:m
 DEVICE=CSM
 endif
 
+ifeq ($(DEVICE), CSM_644P)
+MCU=atmega644p
+F_CPU=8000000
+BOOTSIZE=4096
+FUSES=-U lfuse:w:0xd6:m -U hfuse:w:0xd8:m -U lock:w:0x2f:m
+DEVICE=CSM
+endif
+
+
 ifeq ($(DEVICE), ZCSM_1284P)
 MCU=atmega1284p
+F_CPU=8000000
+BOOTSIZE=4096
+FUSES=-U lfuse:w:0xd6:m -U hfuse:w:0xd8:m -U lock:w:0x2f:m
+DEVICE=ZCSM
+endif
+
+ifeq ($(DEVICE), ZCSM_324P)
+MCU=atmega324p
 F_CPU=8000000
 BOOTSIZE=2048
 FUSES=-U lfuse:w:0xd6:m -U hfuse:w:0xd8:m -U lock:w:0x2f:m
 DEVICE=ZCSM
+endif
+
+ifeq ($(DEVICE), PWMBOX)
+MCU=atmega324p
+F_CPU=8000000
+BOOTSIZE=2048
+FUSES=-U lfuse:w:0xd6:m -U hfuse:w:0xd8:m -U lock:w:0x2f:m
+endif
+
+ifeq ($(DEVICE), CUNO2)
+MCU=atmega1284p
+F_CPU=8000000
+BOOTSIZE=4096
+RADIO_CRYPT=1
+FUSES=-U lfuse:w:0xd6:m -U hfuse:w:0xd8:m -U lock:w:0x2f:m
 endif
 
 ifeq ($(DEVICE), RWE_PSS)
@@ -252,6 +288,9 @@ endif
 ##
 ifeq ($(MCU), atmega644p)
 BFD_MACH=avr5
+EE_MAC_ADDR = 2042
+EE_PUBL_KEY = 2010
+EE_PRIV_KEY = 2026
 ifeq ($(BOOTSIZE), 512)
 	MT_BOOTLOADER_ADDRESS = 0xFC00
 endif
@@ -331,7 +370,11 @@ TARGET = main
 # List C source files here. (C dependencies are automatically generated.)
 SRC = $(TARGET).c
 SRC += ../lib/seriallink/seriallink.c ../lib/seriallink/ringbuf.c
-#SRC += ../lib/crypto/rsa_decrypt.c ../lib/crypto/rsa_encrypt.c
+ifdef RADIO_CRYPT
+SRC += ../lib/crypto/rsa_decrypt.c ../lib/crypto/rsa_encrypt.c
+SRC += ../lib/crypto-lib/aes/aes_dec.c ../lib/crypto-lib/aes/aes_keyschedule.c ../lib/crypto-lib/aes/aes_enc.c ../lib/crypto-lib/aes/aes_sbox.c ../lib/crypto-lib/aes/aes_invsbox.c
+SRC += ../lib/crypto-lib/aes/aes128_enc.c ../lib/crypto-lib/aes/aes128_dec.c
+endif
 
 # List Assembler source files here.
 # Make them always end in a capital .S.  Files ending in a lowercase .s
@@ -341,8 +384,10 @@ SRC += ../lib/seriallink/seriallink.c ../lib/seriallink/ringbuf.c
 # it will preserve the spelling of the filenames, and gcc itself does
 # care about how the name is spelled on its command-line.
 ASRC =
-#ASRC = ../lib/crypto/rsa_dec.S  ../lib/crypto/rsa_enc.S ../lib/crypto/RSA_MODULO.S ../lib/crypto/rsa_mul.S  
-
+ifdef RADIO_CRYPT
+ASRC += ../lib/crypto/rsa_dec.S  ../lib/crypto/rsa_enc.S ../lib/crypto/RSA_MODULO.S ../lib/crypto/rsa_mul.S  
+ASRC += ../lib/crypto-lib/gf256mul/gf256mul.S
+endif
 
 # Optimization level, can be [0, 1, 2, 3, s].
 # 0 = turn off optimization. s = optimize for size.
@@ -367,10 +412,17 @@ EXTRAINCDIRS =
 CSTANDARD = -std=gnu99
 
 # Place -D or -U options here
-CDEFS = -DNO_PGM -DBOOTSIZE=$(BOOTSIZE) -DF_CPU=$(F_CPU) -D$(DEVICE) -DDEVICE=$(DEVICE)
+CDEFS  = -DNO_PGM -DBOOTSIZE=$(BOOTSIZE) -DF_CPU=$(F_CPU) -D$(DEVICE) -DDEVICE=$(DEVICE)
+ifdef RADIO_CRYPT
+CDEFS += -DRADIO_CRYPT
+endif
 
 # Place -I options here
-CINCS = -I../lib/seriallink/
+CINCS  = -I../lib/seriallink/
+ifdef RADIO_CRYPT
+CINCS += -I../lib/crypto/
+CINCS += -I../lib/crypto-lib/aes/ -I../lib/crypto-lib/gf256mul/
+endif
 
 
 # Compiler flags.
@@ -398,7 +450,7 @@ CFLAGS += $(CSTANDARD)
 #             for use in COFF files, additional information about filenames
 #             and function names needs to be present in the assembler source
 #             files -- see avr-libc docs [FIXME: not yet described there]
-ASFLAGS = -Wa,-adhlns=$(<:.S=.lst),-gstabs
+ASFLAGS += -Wa,-adhlns=$(<:.S=.lst),-gstabs
 
 
 
@@ -600,6 +652,7 @@ gccversion :
 
 # Program the device.
 program: $(TARGET).hex $(TARGET).eep
+	echo -e "vtarg 3.3\nquit" | $(AVRDUDE) $(AVRDUDE_FLAGS) -t
 	$(AVRDUDE) $(AVRDUDE_FLAGS) $(AVRDUDE_WRITE_FLASH) $(AVRDUDE_WRITE_EEPROM) $(FUSES)
 	echo -e "write eeprom $(EE_MAC_ADDR) $(shell $(GETMAC) Dudette $(DEVICE) $(MCU))\nquit" | $(AVRDUDE) $(AVRDUDE_FLAGS) -t
 	@echo Key is: $(RSAPAIR)
