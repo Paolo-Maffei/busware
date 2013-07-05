@@ -42,8 +42,20 @@
 
 #include "board.h"
 #include <avr/eeprom.h>
+#include <string.h>
 #ifdef BOOT_RADIO
 #include "seriallink.h"
+#endif
+
+#ifdef RADIO_CRYPT
+#include "rsa.h"
+#define RSA_MAX_LEN (128/8)
+unsigned char AES_KEY[RSA_MAX_LEN]   = { 1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6 };
+unsigned char RSA_PUBL[RSA_MAX_LEN]  = { 1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6 };
+unsigned char RSA_PRIV[RSA_MAX_LEN]  = { 1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6 };
+unsigned char RSA_SPUBL[RSA_MAX_LEN] = { 1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6 };
+unsigned char rsa_tmp[3*RSA_MAX_LEN];
+#define rsa_s (rsa_tmp+(2*RSA_MAX_LEN))
 #endif
 
 uint8_t start_me = 0;
@@ -51,6 +63,7 @@ uint8_t start_me = 0;
 #define EE_MAC_ADDR (uint8_t*)(E2END+1-6)
 #define EE_RSA_PRIV (uint8_t*)(EE_MAC_ADDR-16)
 #define EE_RSA_PUBL (uint8_t*)(EE_RSA_PRIV-16)
+#define EE_RSA_SPUBL (uint8_t*)(EE_RSA_PUBL-16)
 
 /* MCU frequency */
 #ifndef F_CPU
@@ -138,17 +151,21 @@ static void (*_jump_to_app)(void) = 0x0000;
 static void (*sendchar)(uint8_t data);
 static uint8_t (*recvchar)(void);
 
+static uint16_t led_counter = 1;
 static uint16_t led_pattern = 0xaaaa;
 static uint8_t led_step     = 0;
 
 void blink(void) {
+	if (--led_counter)
+		return;
+	led_counter = 15000;
+
 	if ((led_pattern & _BV(led_step++))) {
 		LED_PORT |= _BV(LED_PIN);
 	} else {
 		LED_PORT &= ~_BV(LED_PIN);
 	}
 	led_step &= 15;
-	_delay_ms(100);
 }
 
 #ifdef BOOT_SERIAL
@@ -158,7 +175,8 @@ static void serial_sendchar(uint8_t data) {
 }
 
 static uint8_t serial_recvchar(void) {
-          while (!(UART_STATUS & (1<<UART_RXREADY)));
+          while (!(UART_STATUS & (1<<UART_RXREADY)))
+		blink();
 	  return UART_DATA;
 }
 #endif
@@ -170,7 +188,8 @@ static void radio_sendchar(uint8_t data) {
 }
 
 static uint8_t radio_recvchar(void) {
-          while (!slink_elements());
+          while (!slink_elements())
+		blink();
           return slink_get();
 }
 #endif
@@ -390,9 +409,9 @@ int main(void)
 #endif
 
 #ifdef BOOT_LOWACTIVE
-	if (!bit_is_set(BOOT_IN, BOOT_PIN) || start_me) {
+	if (!bit_is_set(BOOT_IN, BOOT_PIN)) {
 #else
-	if (bit_is_set(BOOT_IN, BOOT_PIN) || start_me) {
+	if (bit_is_set(BOOT_IN, BOOT_PIN)) {
 #endif
 		// Set baud rate
 		UART_BAUD_HIGH = (UART_CALC_BAUDRATE(BAUDRATE)>>8) & 0xFF;
@@ -425,13 +444,13 @@ int main(void)
         uint16_t to = 0;
 
 #ifndef RADIO_ALWAYS
-	BOOT_DDR  &= ~_BV(BOOT_PIN);		// set as Input
-#ifdef BOOT_LOWACTIVE
-	BOOT_PORT |= _BV(BOOT_PIN);		// pull
+	BOOT_RADIO_DDR  &= ~_BV(BOOT_RADIO_PIN);		// set as Input
+#ifdef BOOT_RADIO_LOWACTIVE
+	BOOT_RADIO_PORT |= _BV(BOOT_RADIO_PIN);		// pull
 	_delay_ms(100);				// allow possible external C to charge
-	if (!bit_is_set(BOOT_IN, BOOT_PIN)) {
+	if (!bit_is_set(BOOT_RADIO_IN, BOOT_RADIO_PIN)) {
 #else
-	if (bit_is_set(BOOT_IN, BOOT_PIN)) {
+	if (bit_is_set(BOOT_RADIO_IN, BOOT_RADIO_PIN)) {
 #endif
 #endif
 
@@ -441,14 +460,60 @@ int main(void)
 	for( to=0; to<6; to++)
 	  pkt.data[to] = eeprom_read_byte( EE_MAC_ADDR+to );
 
+#ifdef RADIO_CRYPT
+	// add our public key ...
+	uint8_t have_skey = 0;
+	for( to=0; to<RSA_MAX_LEN; to++) {
+	  pkt.data[6+to] = eeprom_read_byte( EE_RSA_PUBL+to );
+	  RSA_PUBL[to]   = eeprom_read_byte( EE_RSA_PUBL+to );
+	  RSA_PRIV[to]   = eeprom_read_byte( EE_RSA_PRIV+to );
+	  RSA_SPUBL[to]  = eeprom_read_byte( EE_RSA_SPUBL+to );
+
+	  // if all bytes are 0xff (deleted) - assume no server key is loaded
+	  if (RSA_SPUBL[to] != 0xff)
+	    have_skey = 1;;
+        }
+	pkt.len += RSA_MAX_LEN;
+#endif
+
+	pkt.start = 1;
+	pkt.plen  = pkt.len+1; 
+
 	slink_send( &pkt ); // send own MAC
 	to = RESEND_AFTER;
 	while (to--) {
 		if (slink_recv(&pkt)==SL_OK) {
 			// does the packet look like a 'b'+<channelnumber> ?
-			if (pkt.seq=='b' && pkt.len==2) {
+			if (pkt.seq=='b' && ((pkt.len==2)||(pkt.len>=18))) {
 				to = (pkt.data[0]<<8) | pkt.data[1];
-				slink_init(to);
+
+				if (have_skey && (pkt.len<34)) {
+					// signed message required ... giving up 
+					break;
+				}
+
+				// are there any keys sent?
+				if (pkt.len>=18) {
+
+					// was there a signature sent?
+					if (have_skey && (pkt.len>=34)) {
+		                                rsa_decrypt(RSA_MAX_LEN,&(pkt.data[18]),3,RSA_SPUBL,rsa_s,rsa_tmp);
+						if (memcmp( &(pkt.data[2]), &(pkt.data[18]), RSA_MAX_LEN )!=0) {
+							// signature is invalid!
+							break;
+						}
+					}
+
+                                        memcpy(AES_KEY,&(pkt.data[2]),RSA_MAX_LEN);
+                                	rsa_encrypt(RSA_MAX_LEN,AES_KEY,RSA_PRIV,RSA_PUBL,rsa_s,rsa_tmp);
+					slink_init(to);
+					slink_crypt( AES_KEY );
+
+				} else {
+
+					slink_init(to);
+				}
+
                 		sendchar = radio_sendchar;
                 		recvchar = radio_recvchar;
 				led_pattern = 0xaaaa;
@@ -460,8 +525,8 @@ int main(void)
 
 #ifndef RADIO_ALWAYS
    	};
-	BOOT_DDR  &= ~_BV(BOOT_PIN);		// set to default		
-	BOOT_PORT &= ~_BV(BOOT_PIN);		// set to default		
+	BOOT_RADIO_DDR  &= ~_BV(BOOT_RADIO_PIN);		// set to default		
+	BOOT_RADIO_PORT &= ~_BV(BOOT_RADIO_PIN);		// set to default		
 #endif
 #endif
 

@@ -17,5 +17,13 @@
 #include "board_HM_LC-Sw1-PI.h"
 #endif
 
+#ifdef PWMBOX
+#include "board_PWMBOX.h"
+#endif
+
+#ifdef CUNO2
+#include "board_CUNO2.h"
+#endif
+
 #endif
 

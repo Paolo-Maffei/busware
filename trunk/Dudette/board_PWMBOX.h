@@ -1,6 +1,8 @@
 #ifndef _BOARD_CSM_H
 #define _BOARD_CSM_H
 
+//#define ADB
+
 #define SPI_PORT                PORTB
 #define SPI_DDR                 DDRB
 #define SPI_IN                  PINB
@@ -15,7 +17,6 @@
 
 #define CC1100_GDO0_DDR         DDRB
 #define CC1100_GDO0_PORT        PORTB
-#define CC1100_GDO0_IN          PINB 
 #define CC1100_GDO0_PIN         1
 #define CC1100_GDO2_DDR         DDRD
 #define CC1100_GDO2_PORT        PORTD
@@ -34,13 +35,13 @@
 
 #define BOOT_RADIO          	
 #define RADIO_CHANNEL           0x2904
-#define RADIO_ALWAYS
+//#define RADIO_ALWAYS
 
 /*********************************/
 /* Will I listen on serial line? */
 /*********************************/
 
-#define _BOOT_SERIAL          	
+#define BOOT_SERIAL          	
 
 /* UART Baudrate */
 #define BAUDRATE 38400
@@ -50,22 +51,42 @@
 //#define UART_USE_SECOND
 
 /* where is the conditional switch located? */
-#ifdef CSM
-#define BOOT_PORT          	PORTD
-#define BOOT_DDR           	DDRD
-#define BOOT_IN           	PIND
-#define BOOT_PIN          	3
-#define BOOT_LOWACTIVE          	
-#else
-#define BOOT_PORT          	PORTD
-#define BOOT_DDR           	DDRD
-#define BOOT_IN           	PIND
-#define BOOT_PIN          	5
-#endif
+#ifdef ADB
 
-#define LED_PORT		PORTA
-#define LED_DDR			DDRA
-#define LED_PIN			1
+#define RADIO_ALWAYS
+
+#define BOOT_PORT               PORTD
+#define BOOT_DDR                DDRD
+#define BOOT_IN                 PIND
+#define BOOT_PIN                5
+
+#define BOOT_RADIO_PORT        	PORTD
+#define BOOT_RADIO_DDR         	DDRD
+#define BOOT_RADIO_IN          	PIND
+#define BOOT_RADIO_PIN         	5
+
+#define LED_PORT                PORTA
+#define LED_DDR                 DDRA
+#define LED_PIN                 1
+
+#else
+
+#define BOOT_PORT               PORTD
+#define BOOT_DDR                DDRD
+#define BOOT_IN                 PIND
+#define BOOT_PIN                5
+
+#define BOOT_RADIO_PORT        	PORTC
+#define BOOT_RADIO_DDR         	DDRC
+#define BOOT_RADIO_IN          	PINC
+#define BOOT_RADIO_PIN         	3
+#define BOOT_RADIO_LOWACTIVE          	
+
+#define LED_PORT		PORTC
+#define LED_DDR			DDRC
+#define LED_PIN			4
+
+#endif
 
 #endif
 
