@@ -15,6 +15,7 @@
 
 #define CC1100_GDO0_DDR         DDRD
 #define CC1100_GDO0_PORT        PORTD
+#define CC1100_GDO0_IN          PIND
 #define CC1100_GDO0_PIN         3
 #define CC1100_GDO2_DDR         DDRD
 #define CC1100_GDO2_PORT        PORTD

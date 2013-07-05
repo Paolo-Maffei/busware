@@ -38,6 +38,10 @@
 #include "board.h"
 #include "seriallink.h"
 
+// change this KEY!
+// make use of: hexdump -v -n "16" -e '1/1 "0x%02x,"' /dev/urandom
+unsigned char AES_KEY[] = { 0xa7,0xf6,0x29,0x14,0x88,0x91,0x0e,0x95,0x70,0xd5,0xbe,0xdd,0x46,0x90,0x0d,0xe1 };
+
 /** LUFA CDC Class driver interface configuration and state information. This structure is
  *  passed to all CDC Class driver functions, so that multiple instances of the same class
  *  within a device can be differentiated from one another.
@@ -129,6 +133,8 @@ void SetupHardware(void)
 	LEDs_Init();
 
 	slink_init(RADIO_CHANNEL);
+	slink_crypt(AES_KEY);
+//	slink_crypt(NULL);
 
 	USB_Init();
 }
