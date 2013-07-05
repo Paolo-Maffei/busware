@@ -31,6 +31,17 @@ static uint8_t rxseq;
 static uint8_t txseq;
 static uint8_t ccinitialized;
 
+#ifdef RADIO_CRYPT
+#include "aes.h"
+
+#define AES_KEY_SIZE	128
+
+unsigned char *AES_Key;
+aes128_ctx_t ctx;
+
+static uint8_t do_crypt = 0;
+#endif
+
 static struct apkt txpkt;
 
 // CC1101 CHIP configuration - REG -> VALUE
@@ -86,13 +97,14 @@ void cc1101_arch_init(void) {
 void
 cc1101_arch_interrupt_enable(void)
 {
-        /* Enable interrupt on the GDO2 pin */
+        /* Enable inputs on GDO pins */
 
         CC1100_GDO2_DDR  &= ~_BV(CC1100_GDO2_PIN);
         CC1100_GDO2_PORT |= _BV(CC1100_GDO2_PIN);
 
-//        EICRA |=  GDOEDGE;              // Rising edge generates an interrupt
-//        EIMSK |=  (1<<GDOINT);
+        CC1100_GDO0_DDR  &= ~_BV(CC1100_GDO0_PIN);
+        CC1100_GDO0_PORT |= _BV(CC1100_GDO0_PIN);
+
 }
 
 
@@ -203,25 +215,47 @@ void slink_init(uint16_t channel) {
 
   txseq = 1;
   rxseq = 0;
+#ifdef RADIO_CRYPT
+  do_crypt = 0;
+#endif
 
   memset( &txpkt, 0, sizeof( txpkt));
   ccinitialized = 1;
 };
 
+void slink_crypt(unsigned char *Key) {
+#ifdef RADIO_CRYPT
+  if (Key==NULL) {
+    do_crypt = 0;
+  } else {
+    do_crypt = 1;
+  }
+  AES_Key = Key;
+#endif
+};
+
 void slink_send(struct apkt *pkt) {
-  uint8_t i;
+  uint8_t i, l;
 
   if (!pkt)
     return;
 
-  if (pkt->len>CC1101_MAX_PAYLOAD)
+  if (pkt->plen>63)
     return;
 
-  // clear the TX fifo
-
-  ccStrobe(CC1100_SIDLE);
-  while(cc1100_readReg( CC1100_MARCSTATE ) != MARCSTATE_IDLE);
-  ccStrobe(CC1100_SFTX);
+#ifdef RADIO_CRYPT
+  if (do_crypt && pkt->start) {
+    pkt->plen = 0;
+    PRINTF("CC1101 DEBUG: encrypting pkt...\r\n");
+    aes128_init(AES_Key, &ctx);
+    l = pkt->len + 2;
+    for (i=0; i<l; i+=(AES_KEY_SIZE/8)) {
+      aes128_enc(((unsigned char *)pkt)+i, &ctx);
+      pkt->plen += (AES_KEY_SIZE/8);
+    }
+    pkt->start = 0;
+  }
+#endif
 
   // fill FIFO
   cc1101_arch_enable();
@@ -229,21 +263,25 @@ void slink_send(struct apkt *pkt) {
   spi_rw_byte(CC1100_WRITE_BURST | CC1100_TXFIFO);
 
   // length
-  spi_rw_byte(pkt->len+1);
-  // sequence / command
-  spi_rw_byte(pkt->seq);
+  spi_rw_byte(pkt->plen);
 
   // payload
-  for(i = 0; i < pkt->len; i++) {
-    spi_rw_byte(pkt->data[i]);
+  for(i = 0; i < pkt->plen; i++) {
+    spi_rw_byte(*((uint8_t *)(pkt)+pkt->start+i));
   }
 
   cc1101_arch_disable();
 
+  // check CCA before "talking"
+  while ((cc1100_readReg( CC1100_MARCSTATE ) == MARCSTATE_RX) && !bit_is_set(CC1100_GDO0_IN, CC1100_GDO0_PIN)) {
+    PRINTF("CC1101 DEBUG: CCA busy, waiting ... \r\n");
+    _delay_ms(200);
+  }
+
   ccStrobe(CC1100_STX);
   while(cc1100_readReg( CC1100_MARCSTATE ) != MARCSTATE_RX);
 
-  PRINTF("CC1101 DEBUG: send %d bytes seq: %d!\r\n", pkt->len, pkt->seq);
+  PRINTF("CC1101 DEBUG: send %d bytes seq: %d!\r\n", pkt->plen, pkt->seq);
 }
 
 static void slink_flush(void) {
@@ -264,16 +302,19 @@ static void slink_flush(void) {
   if (ringbuf_elements( &txbuf )==0)
     return;
 
-//  PORTA ^= 1;
   // create a fresh packet for TX
   memset( &txpkt, 0, sizeof( txpkt));
-  txpkt.seq = txseq++;
+  txpkt.seq  = txseq++;
+  txpkt.cseq = txpkt.seq;
   txpkt.len = 0;
   while (ringbuf_elements( &txbuf )) {
     txpkt.data[txpkt.len++] = ringbuf_get( &txbuf );
     if (txpkt.len>=CC1101_MAX_PAYLOAD)
       break;
   }
+  // set start and lenght of payload for uncrypted packet:
+  txpkt.start = 1;
+  txpkt.plen = txpkt.len + 1;
   PRINTF("CC1101 DEBUG: preparing new pkt...\r\n");
 
 resent_pkt:
@@ -303,37 +344,45 @@ uint8_t slink_recv(struct apkt *pkt) {
   }
 */
 
-  memset( pkt, 0, sizeof( struct apkt ));
-
   if(!pkt)
     return SL_ERROR;
+
+  memset( pkt, 0, sizeof( struct apkt ));
 
   // is something in RX fifo?
   if (!bit_is_set(CC1100_GDO2_IN, CC1100_GDO2_PIN))
     return SL_NONE;
 
-  // read len from FIFO
-  pkt->len = cc1100_readReg( CC1100_RXFIFO ); // read len
+  // read payload len from FIFO
+  pkt->plen = cc1100_readReg( CC1100_RXFIFO ); // read len
 
-  if ((pkt->len==0) || ((pkt->len-1)>CC1101_MAX_PAYLOAD)) {
+  if ((pkt->plen==0) || (pkt->plen>63)) {
     ccStrobe( CC1100_SIDLE  );
-    PRINTF("CC1101 DEBUG: Packet len %d is invalid!\r\n", pkt->len);
+    PRINTF("CC1101 DEBUG: Packet len %d is invalid!\r\n", pkt->plen);
     return SL_ERROR;
   }
 
-  pkt->seq = cc1100_readReg( CC1100_RXFIFO ); // read seq
+  pkt->start = 1;
+  pkt->len = pkt->plen-1;
 
-  pkt->len--;
+#ifdef RADIO_CRYPT
+  if (do_crypt)
+    pkt->start = 0;
+#endif
+
+  PRINTF("CC1101 DEBUG: Reading %d bytes!\r\n", pkt->plen);
+
   // read all data in FIFO
   cc1101_arch_enable();
   spi_rw_byte(CC1100_READ_BURST | CC1100_RXFIFO);
 
-  for (i=0; i<pkt->len; i++) {
-    pkt->data[i] = spi_rw_byte( 0 );
+  for (i=0; i<pkt->plen; i++) {
+    *((uint8_t *)(pkt)+pkt->start+i) = spi_rw_byte( 0 );
   }
 
-  pkt->data[pkt->len] = spi_rw_byte( 0 ); // RSSI
-  pkt->timeout        = spi_rw_byte( 0 ); // LQI
+  // misuse some vars for storage
+  pkt->cseq    = spi_rw_byte( 0 ); // RSSI
+  pkt->timeout = spi_rw_byte( 0 ); // LQI
 
   cc1101_arch_disable();
 
@@ -341,12 +390,24 @@ uint8_t slink_recv(struct apkt *pkt) {
   while (cc1100_readReg(CC1100_RXBYTES) & 0x7f)	
     cc1100_readReg( CC1100_RXFIFO );
 
-  PRINTF("CC1101 DEBUG: Reading %d bytes - seq: %d!\r\n", pkt->len, pkt->seq);
-
   if (!( pkt->timeout & CC1100_LQI_CRC_OK_BM )) {
+    ccStrobe( CC1100_SIDLE  );
     PRINTF("CC1101 DEBUG: Packet was not CRC_OK!\r\n");
     return SL_ERROR;
   }
+
+#ifdef RADIO_CRYPT
+  if (do_crypt) {
+    PRINTF("CC1101 DEBUG: decrypting pkt...\r\n");
+    aes128_init(AES_Key, &ctx);
+    for (i=0; i<pkt->plen; i+= (AES_KEY_SIZE/8)) {
+      aes128_dec(((unsigned char *)pkt)+i, &ctx);
+    }
+    pkt->start = 1;
+  }
+#endif
+
+  PRINTF("CC1101 DEBUG: Reading %d bytes - seq: %d!\r\n", pkt->len, pkt->seq);
 
   return SL_OK;
 }
@@ -362,7 +423,7 @@ static void slink_receive(void) {
   if (p.len==0) {
     PRINTF("CC1101 DEBUG: Rcvd Ack for %d!\r\n", p.seq);
 
-    if (txpkt.seq == p.seq)
+    if (txpkt.cseq == p.seq)
       txpkt.timeout = 0;
 
     return;
@@ -385,28 +446,18 @@ static void slink_receive(void) {
   }
   
 ack_pkt:
-  ccStrobe(CC1100_SIDLE);
-  while(cc1100_readReg( CC1100_MARCSTATE ) != MARCSTATE_IDLE);
-  ccStrobe(CC1100_SFTX);
  
   // send back ACK
 
-  rxseq = p.seq; // remember 
-
-  cc1101_arch_enable();
-  spi_rw_byte(CC1100_WRITE_BURST | CC1100_TXFIFO);
-
-  // length
-  spi_rw_byte(1);
-  // sequenz
-  spi_rw_byte(p.seq);
-
-  cc1101_arch_disable();
-
-  ccStrobe(CC1100_STX);
-  while(cc1100_readReg( CC1100_MARCSTATE ) != MARCSTATE_RX);
-
   PRINTF("CC1101 DEBUG: sending ACK for %d!\r\n", p.seq);
+
+  rxseq   = p.seq; // remember 
+  p.len   = 0;
+  p.plen  = 1;
+  p.start = 1;
+
+  slink_send( &p );
+
 };
 
 int slink_put(uint8_t c) {
