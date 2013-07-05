@@ -20,8 +20,13 @@ OPTIMIZATION = s
 TARGET       = SerialLink
 SRC          = $(TARGET).c Descriptors.c $(LUFA_SRC_USB) $(LUFA_SRC_USBCLASS)
 SRC         += ../../lib/seriallink/seriallink.c ../../lib/seriallink/ringbuf.c
+SRC         += ../../lib/crypto-lib/aes/aes_dec.c ../../lib/crypto-lib/aes/aes_keyschedule.c ../../lib/crypto-lib/aes/aes_enc.c ../../lib/crypto-lib/aes/aes_sbox.c ../../lib/crypto-lib/aes/aes_invsbox.c ../../lib/crypto-lib/gf256mul/gf256mul.S
+SRC	    += ../../lib/crypto-lib/aes/aes128_enc.c ../../lib/crypto-lib/aes/aes128_dec.c
+
+
 LUFA_PATH    = ../../lufa-lib-read-only/LUFA
-CC_FLAGS     = -DUSE_LUFA_CONFIG_HEADER -IConfig/ -I../../lib/seriallink/
+CC_FLAGS     = -DUSE_LUFA_CONFIG_HEADER -IConfig/ -I../../lib/seriallink/ -I../../lib/crypto-lib/gf256mul/ -I../../lib/crypto-lib/aes/
+CC_FLAGS    += -DRADIO_CRYPT
 LD_FLAGS     =
 
 # Default target
