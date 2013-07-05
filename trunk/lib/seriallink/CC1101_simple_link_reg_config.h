@@ -42,7 +42,7 @@ static const uint8_t PROGMEM CC1101_CFG[] = {
   0x11, 0x3B, //Modem Configuration,
   0x12, 0x1B, //Modem Configuration,
   0x15, 0x62, //Modem Deviation Setting,
-  0x17, 0x3f, //
+  0x17, 0x3f, //CCA both - always back to RX
   0x18, 0x18, //Main Radio Control State Machine Configuration,
   0x19, 0x1D, //Frequency Offset Compensation Configuration,
   0x1A, 0x1C, //Bit Synchronization Configuration,
