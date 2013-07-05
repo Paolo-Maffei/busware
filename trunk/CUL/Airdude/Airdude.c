@@ -53,27 +53,20 @@
 #define PRINTF(...)
 #endif
 
-unsigned char PROGMEM private64e3[] = { 0xa0, 0x63, 0x0a, 0x93, 0x0f, 0x86, 0xa5, 0x1a, 0x63, 0x28, 0xf0, 0x92, 0x89, 0xf8, 0x47, 0x63 };
-unsigned char PROGMEM public64e3[]  = { 0xf0, 0x94, 0x8f, 0xdc, 0x97, 0x49, 0xf7, 0xa9, 0x85, 0x1a, 0x12, 0x04, 0x79, 0x04, 0x6b, 0x21 };
+// change this KEY!
+// make use of: hexdump -v -n "16" -e '1/1 "0x%02x,"' /dev/urandom
+unsigned char AES_KEY[16] = { 1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6 };
+unsigned char RSA_PUBL[16] = { 1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6 };
+unsigned char RSA_PRIV[16] = { 1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6 };
 
-//unsigned char PROGMEM private64e3[] = { 0x8B,0x35,0xEB,0x99,0x91,0x07,0xB6,0x0B};
-//unsigned char PROGMEM public64e3[]  = { 0xD0,0xD0,0xE1,0x68,0x28,0xC7,0x35,0x59};
-
-/* just random data for testeting */
-unsigned char PROGMEM CONSTANT_DATA[]= {
-        0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x10,0x11,0x12,0x13,0x14,0x15,0x16,0x5A,0x59,0xE9,0x71,0x1A,0xCB,0x01,0x11,0xDF,0x92,0x8E,0xF4,0x7B,0xAD,0xD8,0x69
-};
+unsigned char PROGMEM private128[] = { 0xa0, 0x63, 0x0a, 0x93, 0x0f, 0x86, 0xa5, 0x1a, 0x63, 0x28, 0xf0, 0x92, 0x89, 0xf8, 0x47, 0x63 };
+unsigned char PROGMEM public128[]  = { 0xf0, 0x94, 0x8f, 0xdc, 0x97, 0x49, 0xf7, 0xa9, 0x85, 0x1a, 0x12, 0x04, 0x79, 0x04, 0x6b, 0x21 };
 
 #define RSA_MAX_LEN (128/8)
 unsigned char cryptdata[RSA_MAX_LEN];
-//unsigned char public_key[RSA_MAX_LEN];
-//unsigned char private_key[RSA_MAX_LEN];
-//unsigned int  public_exponent;
 
 unsigned char rsa_tmp[3*RSA_MAX_LEN];
 #define rsa_s (rsa_tmp+(2*RSA_MAX_LEN))
-//unsigned char rsa_s[RSALEN];
-
 
 /** LUFA CDC Class driver interface configuration and state information. This structure is
  *  passed to all CDC Class driver functions, so that multiple instances of the same class
@@ -151,7 +144,8 @@ int usb_putchar (char data, FILE * stream) {
 static uint8_t mode = 0;
 
 int main(void) {
-	int c;
+	int c, do_crypt;
+	uint16_t loop;
         struct apkt pkt;
 
 	SetupHardware();
@@ -190,18 +184,54 @@ int main(void) {
                 if (slink_recv(&pkt)==SL_OK) {
                         PRINTF( "mode 0: recved pkt\n");
                         // does the packet look like a 'B'+<MAC address> ?
-                        if (pkt.seq=='B' && pkt.len==6) {
+                        if (pkt.seq=='B' && (pkt.len==6||pkt.len==22)) {
                                 PRINTF( "%x:%x:%x:%x:%x:%x is booting ...\n", pkt.data[0], pkt.data[1], pkt.data[2], pkt.data[3], pkt.data[4], pkt.data[5] );
+
+				do_crypt = 0;
+				if (pkt.len==22)
+					do_crypt = 1;
 
                                 // catch him!
                                 pkt.seq = 'b';
                                 pkt.len = 2; // length of channel number
                                 pkt.data[0] = (DATA_CHANNEL>>8);
                                 pkt.data[1] = DATA_CHANNEL & 0xff;
+
+				// was there a public key?
+				if (do_crypt) {
+					memcpy(cryptdata,AES_KEY,RSA_MAX_LEN);
+				  	for (uint8_t i=0;i<RSA_MAX_LEN;i++) PRINTF( "%x ", cryptdata[i] ); PRINTF( "\n" );
+        			  	rsa_decrypt(RSA_MAX_LEN,cryptdata,3,&(pkt.data[6]),rsa_s,rsa_tmp); 
+					for (uint8_t i=0;i<RSA_MAX_LEN;i++) {
+						pkt.data[2+i] = cryptdata[i];
+						PRINTF( "%x ", cryptdata[i] );
+					}
+					PRINTF( "\n" );
+					pkt.len += RSA_MAX_LEN;
+
+					// generate signature
+					memcpy_P(RSA_PUBL,public128,RSA_MAX_LEN);
+					memcpy_P(RSA_PRIV,private128,RSA_MAX_LEN);
+        				rsa_encrypt(RSA_MAX_LEN,cryptdata,RSA_PRIV,RSA_PUBL,rsa_s,rsa_tmp);
+					PRINTF( "Signature: " ); 
+					for (uint8_t i=0;i<RSA_MAX_LEN;i++) {
+						pkt.data[18+i] = cryptdata[i];
+						PRINTF( "%x ", cryptdata[i] ); 
+					}
+					PRINTF( "\n" );
+					pkt.len += RSA_MAX_LEN;
+
+				}
+
+                                pkt.plen = pkt.len+1; // length of payload
+                                pkt.start = 1; // pkt index
                                 slink_send( &pkt );
 
                                 PRINTF( "Entering mode 1\n" );
                                 slink_init(DATA_CHANNEL);
+				if (do_crypt)
+					slink_crypt(AES_KEY);
+
                                 mode = 1;
                         }
                 }
@@ -214,21 +244,17 @@ int main(void) {
 		switch( CDC_Device_ReceiveByte(&VirtualSerial2_CDC_Interface) ) {
 			case 'c':
 			case 'C':
-				PRINTF( "A\n" );
-        			memcpy_P(cryptdata,CONSTANT_DATA,sizeof(cryptdata));
-				for (uint8_t i=0;i<RSA_MAX_LEN;i++)
-					PRINTF( "%x ", cryptdata[i] );
-				PRINTF( "\n" );
+        			memcpy(cryptdata,AES_KEY,RSA_MAX_LEN);
+				PRINTF( "Given Data: " ); for (uint8_t i=0;i<RSA_MAX_LEN;i++) PRINTF( "%x ", cryptdata[i] ); PRINTF( "\n" );
 
-        			rsa_decrypt_P(sizeof(public64e3),cryptdata,3,public64e3,rsa_s,rsa_tmp); 
-				for (uint8_t i=0;i<RSA_MAX_LEN;i++)
-					PRINTF( "%x ", cryptdata[i] );
-				PRINTF( "\n" );
+				memcpy_P(RSA_PUBL,public128,RSA_MAX_LEN);
+				memcpy_P(RSA_PRIV,private128,RSA_MAX_LEN);
+        			rsa_encrypt(RSA_MAX_LEN,cryptdata,RSA_PRIV,RSA_PUBL,rsa_s,rsa_tmp);
+				PRINTF( "Signature: " ); for (uint8_t i=0;i<RSA_MAX_LEN;i++) PRINTF( "%x ", cryptdata[i] ); PRINTF( "\n" );
 
-        			rsa_encrypt_P(sizeof(public64e3),cryptdata ,private64e3,public64e3,rsa_s,rsa_tmp);
-				for (uint8_t i=0;i<RSA_MAX_LEN;i++)
-					PRINTF( "%x ", cryptdata[i] );
-				PRINTF( "\n" );
+				memcpy_P(RSA_PUBL,public128,RSA_MAX_LEN);
+        			rsa_decrypt(RSA_MAX_LEN,cryptdata,3,RSA_PUBL,rsa_s,rsa_tmp); 
+				for (uint8_t i=0;i<RSA_MAX_LEN;i++) PRINTF( "%x ", cryptdata[i] ); PRINTF( "\n" );
 
 				break;
 			case 'R':
@@ -244,6 +270,9 @@ int main(void) {
 		CDC_Device_USBTask(&VirtualSerial1_CDC_Interface);
 		CDC_Device_USBTask(&VirtualSerial2_CDC_Interface);
 		USB_USBTask();
+	
+		// randomize the AES key:
+	//	if (loop++==0)
 	}
 }
 
