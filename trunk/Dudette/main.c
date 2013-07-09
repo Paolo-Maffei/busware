@@ -151,11 +151,14 @@ static void (*_jump_to_app)(void) = 0x0000;
 static void (*sendchar)(uint8_t data);
 static uint8_t (*recvchar)(void);
 
-static uint16_t led_counter = 1;
 static uint16_t led_pattern = 0xaaaa;
+#ifdef LED_PORT
+static uint16_t led_counter = 1;
 static uint8_t led_step     = 0;
+#endif
 
 void blink(void) {
+#ifdef LED_PORT
 	if (--led_counter)
 		return;
 	led_counter = 15000;
@@ -166,6 +169,7 @@ void blink(void) {
 		LED_PORT &= ~_BV(LED_PIN);
 	}
 	led_step &= 15;
+#endif
 }
 
 #ifdef BOOT_SERIAL
@@ -381,8 +385,10 @@ int main(void)
 	uint16_t address = 0;
 	uint8_t device = 0, val;
 
+#ifdef LED_PORT
 	// LED
 	LED_DDR  |= _BV(LED_PIN);
+#endif
 
 #ifdef DISABLE_WDT_AT_STARTUP
 #ifdef WDT_OFF_SPECIAL
@@ -487,6 +493,7 @@ int main(void)
 			if (pkt.seq=='b' && ((pkt.len==2)||(pkt.len>=18))) {
 				to = (pkt.data[0]<<8) | pkt.data[1];
 
+#ifdef RADIO_CRYPT
 				if (have_skey && (pkt.len<34)) {
 					// signed message required ... giving up 
 					break;
@@ -509,10 +516,9 @@ int main(void)
 					slink_init(to);
 					slink_crypt( AES_KEY );
 
-				} else {
-
+				} else
+#endif
 					slink_init(to);
-				}
 
                 		sendchar = radio_sendchar;
                 		recvchar = radio_recvchar;
@@ -534,8 +540,10 @@ int main(void)
 #ifdef BOOT_RADIO
 		slink_done();
 #endif
+#ifdef LED_PORT
 	        LED_PORT &= ~_BV(LED_PIN);
 	        LED_DDR  &= ~_BV(LED_PIN);
+#endif
 		jump_to_app();			// Jump to application sector
 	}
 
@@ -549,9 +557,13 @@ int main(void)
 
 	for(;;) {
 
+#ifdef LED_PORT
 		LED_PORT |= _BV(LED_PIN);
+#endif
 		val = recvchar();
+#ifdef LED_PORT
 		LED_PORT &= ~_BV(LED_PIN);
+#endif
 
 		// Autoincrement?
 		if (val == 'a') {

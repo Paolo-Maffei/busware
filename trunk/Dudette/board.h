@@ -25,5 +25,9 @@
 #include "board_CUNO2.h"
 #endif
 
+#ifdef HM_OU_LED16
+#include "board_HM_OU_LED16.h"
+#endif
+
 #endif
 
