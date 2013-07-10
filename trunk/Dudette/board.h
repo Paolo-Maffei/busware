@@ -1,18 +1,40 @@
 #ifndef _BOARD_H
 #define _BOARD_H
 
-#ifdef CSM
-#include "board_CSM.h"
-#endif
-
-#ifdef ZCSM
-#include "board_CSM.h"
-#endif
-
 // RWE Smarthome Funk-Zwischenstecker-Schaltaktor (PSS)
 // keep button pressed during plugging in the device
 #ifdef RWE_PSS
 #include "board_RWE_PSS.h"
+#endif
+
+// busware - CC1101-Serial-Module
+// tie BL_SEL to GND while booting
+#ifdef CSM
+#include "board_CSM.h"
+#endif
+
+// busware - CC1101-Serial-Module (ZWIR footprint)
+// tie BL_SEL to VDD while booting
+#ifdef ZCSM
+#include "board_CSM.h"
+#endif
+
+// busware - 2 channel PWMBOX
+// keep PROGRAM-button pressed while powering up
+#ifdef PWMBOX
+#include "board_PWMBOX.h"
+#endif
+
+// busware - CC1101-USB-Network-Onewire device
+// keep PROGRAM-button pressed while powering up
+#ifdef CUNO2
+#include "board_CUNO2.h"
+#endif
+
+// busware - ceiling sensor board
+// device will always check for Airdude while booting
+#ifdef CSB
+#include "board_CSB.h"
 #endif
 
 // HomeMatic Funk-Zwischenstecker-Schaltaktor 1fach
@@ -20,14 +42,6 @@
 // keep button pressed during plugging in the device
 #ifdef HM_LC_Sw1_PI
 #include "board_HM_LC-Sw1-PI.h"
-#endif
-
-#ifdef PWMBOX
-#include "board_PWMBOX.h"
-#endif
-
-#ifdef CUNO2
-#include "board_CUNO2.h"
 #endif
 
 // Homematic Funk-Statusanzeige LED16
