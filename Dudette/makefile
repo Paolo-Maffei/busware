@@ -40,7 +40,8 @@
 #DEVICE=ZCSM_1284P
 #DEVICE=RWE_PSS
 #DEVICE=HM_LC_Sw1_PI
-DEVICE=HM_OU_LED16
+DEVICE=HM_LC_Sw4_DR
+#DEVICE=HM_OU_LED16
 #DEVICE=PWMBOX
 #DEVICE=CUNO2
 
@@ -113,6 +114,13 @@ MCU=atmega32
 F_CPU=8000000
 BOOTSIZE=2048
 FUSES=-U lfuse:w:0xde:m -U hfuse:w:0xd0:m -U lock:w:0x2f:m
+endif
+
+ifeq ($(DEVICE), HM_LC_Sw4_DR)
+MCU=atmega32
+F_CPU=8000000
+BOOTSIZE=2048
+FUSES=-U lfuse:w:0xbf:m -U hfuse:w:0xd8:m -U lock:w:0x2f:m
 endif
 
 GETMAC:="./get_mac.pl"
