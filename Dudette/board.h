@@ -31,6 +31,12 @@
 #include "board_CUNO2.h"
 #endif
 
+// busware - CC1101-Onewire-Clock device for RPi
+// pull GPIO18 low during startup or reset by GPIO17
+#ifdef COC
+#include "board_COC.h"
+#endif
+
 // busware - ceiling sensor board
 // device will always check for Airdude while booting
 #ifdef CSB
