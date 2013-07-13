@@ -44,7 +44,8 @@
 #DEVICE=HM_OU_LED16
 #DEVICE=PWMBOX
 #DEVICE=CUNO2
-DEVICE=CSB
+#DEVICE=CSB
+DEVICE=COC
 
 # end of user defined values
 
@@ -94,6 +95,13 @@ F_CPU=8000000
 BOOTSIZE=4096
 RADIO_CRYPT=1
 FUSES=-U lfuse:w:0xd6:m -U hfuse:w:0xd8:m -U lock:w:0x2f:m
+endif
+
+ifeq ($(DEVICE), COC)
+MCU=atmega1284p
+F_CPU=8000000
+BOOTSIZE=2048
+FUSES=-U lfuse:w:0xd6:m -U hfuse:w:0xda:m -U lock:w:0x2f:m
 endif
 
 ifeq ($(DEVICE), CSB)

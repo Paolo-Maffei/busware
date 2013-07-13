@@ -1,5 +1,8 @@
 
 #include "board.h"
+
+#ifdef CC1100_CS_PIN
+
 #include <stdint.h>
 #include <avr/io.h>
 #include "seriallink.h"
@@ -489,4 +492,4 @@ int slink_elements(void) {
   return ringbuf_elements( &rxbuf );
 };
 
-
+#endif
