@@ -45,7 +45,8 @@
 #DEVICE=PWMBOX
 #DEVICE=CUNO2
 #DEVICE=CSB
-DEVICE=COC
+#DEVICE=COC
+#DEVICE=ARDCSM
 
 # end of user defined values
 
@@ -54,6 +55,7 @@ MCU=atmega1284p
 F_CPU=8000000
 BOOTSIZE=4096
 FUSES=-U lfuse:w:0xd6:m -U hfuse:w:0xd8:m -U lock:w:0x2f:m
+RADIO_CRYPT=1
 DEVICE=CSM
 endif
 
@@ -65,13 +67,21 @@ FUSES=-U lfuse:w:0xd6:m -U hfuse:w:0xd8:m -U lock:w:0x2f:m
 DEVICE=CSM
 endif
 
-
 ifeq ($(DEVICE), ZCSM_1284P)
 MCU=atmega1284p
 F_CPU=8000000
 BOOTSIZE=4096
 FUSES=-U lfuse:w:0xd6:m -U hfuse:w:0xd8:m -U lock:w:0x2f:m
 DEVICE=ZCSM
+RADIO_CRYPT=1
+endif
+
+ifeq ($(DEVICE), ARDCSM)
+MCU=atmega1284p
+F_CPU=8000000
+BOOTSIZE=4096
+FUSES=-U flash:w:/root/workdir/culfw/Devices/zCSM/CSM.hex -U lfuse:w:0xd6:m -U hfuse:w:0xd8:m -U lock:w:0x2f:m
+RADIO_CRYPT=1
 endif
 
 ifeq ($(DEVICE), ZCSM_324P)

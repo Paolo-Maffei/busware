@@ -13,6 +13,12 @@
 #include "board_CSM.h"
 #endif
 
+// busware - Arduino ext with zCSM
+// tie (digital 6) to LOW while booting (LOW->HIGH on digital 7) - with jumpers in place!
+#ifdef ARDCSM
+#include "board_CSM.h"
+#endif
+
 // busware - CC1101-Serial-Module (ZWIR footprint)
 // tie BL_SEL to VDD while booting
 #ifdef ZCSM

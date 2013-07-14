@@ -700,6 +700,32 @@ int main(void)
 			sendchar(SIG_BYTE2);
 			sendchar(SIG_BYTE1);
 
+/*
+		} else if (val == 'm') {
+		        for( uint8_t i=0; i<6; i++)
+          			sendchar( eeprom_read_byte( EE_MAC_ADDR+i ));
+*/
+
+		} else if (val == 'M') {
+		        for( uint8_t i=0; i<5; i++) {
+          			display_hex( eeprom_read_byte( EE_MAC_ADDR+i ), 2);
+				sendchar( ':' );
+			}	
+          		display_hex( eeprom_read_byte( EE_MAC_ADDR+5 ), 2);
+
+/*
+		} else if (val == 'k') {
+			for( uint8_t i=0; i<RSA_MAX_LEN; i++) 
+          			sendchar( eeprom_read_byte( EE_RSA_PUBL+i ));
+
+*/
+		} else if (val == 'K') {
+			for( uint8_t i=0; i<15; i++) { 
+          			display_hex( eeprom_read_byte( EE_RSA_PUBL+i ), 2);
+				sendchar( ':' );
+			}
+          		display_hex( eeprom_read_byte( EE_RSA_PUBL+15 ), 2);
+
 		/* ESC */
 		} else if(val != 0x1b) {
 			sendchar('?');
