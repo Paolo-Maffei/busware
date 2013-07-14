@@ -40,7 +40,7 @@
 /* Will I listen on serial line? */
 /*********************************/
 
-#define _BOOT_SERIAL          	
+#define BOOT_SERIAL          	
 
 /* UART Baudrate */
 #define BAUDRATE 38400
