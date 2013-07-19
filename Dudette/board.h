@@ -43,6 +43,12 @@
 #include "board_COC.h"
 #endif
 
+// busware - CC1101-Clock-Display device for RPi
+// pull GPIO22 low during startup or reset by GPIO17
+#ifdef CCD
+#include "board_CCD.h"
+#endif
+
 // busware - ceiling sensor board
 // device will always check for Airdude while booting
 #ifdef CSB

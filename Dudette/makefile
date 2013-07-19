@@ -47,6 +47,7 @@
 #DEVICE=CSB
 #DEVICE=COC
 #DEVICE=ARDCSM
+#DEVICE=CCD
 
 # end of user defined values
 
@@ -108,6 +109,13 @@ FUSES=-U lfuse:w:0xd6:m -U hfuse:w:0xd8:m -U lock:w:0x2f:m
 endif
 
 ifeq ($(DEVICE), COC)
+MCU=atmega1284p
+F_CPU=8000000
+BOOTSIZE=2048
+FUSES=-U lfuse:w:0xd6:m -U hfuse:w:0xda:m -U lock:w:0x2f:m
+endif
+
+ifeq ($(DEVICE), CCD)
 MCU=atmega1284p
 F_CPU=8000000
 BOOTSIZE=2048
