@@ -37,7 +37,7 @@
 #DEVICE=CSM_1284P
 #DEVICE=CSM_644P
 #DEVICE=ZCSM_324P
-#DEVICE=ZCSM_1284P
+DEVICE=ZCSM_1284P
 #DEVICE=RWE_PSS
 #DEVICE=HM_LC_Sw1_PI
 #DEVICE=HM_LC_Sw4_DR
@@ -55,7 +55,7 @@ ifeq ($(DEVICE), CSM_1284P)
 MCU=atmega1284p
 F_CPU=8000000
 BOOTSIZE=4096
-FUSES=-U lfuse:w:0xd6:m -U hfuse:w:0xd8:m -U lock:w:0x2f:m
+FUSES=-U lfuse:w:0xd6:m -U hfuse:w:0xd8:m -U lock:w:0x2f:m -U flash:w:../../culfw/trunk/culfw/Devices/CSM/CSM.hex
 RADIO_CRYPT=1
 DEVICE=CSM
 endif
@@ -94,10 +94,11 @@ DEVICE=ZCSM
 endif
 
 ifeq ($(DEVICE), PWMBOX)
-MCU=atmega324p
+MCU=atmega1284p
 F_CPU=8000000
-BOOTSIZE=2048
+BOOTSIZE=4096
 FUSES=-U lfuse:w:0xd6:m -U hfuse:w:0xd8:m -U lock:w:0x2f:m
+RADIO_CRYPT=1
 endif
 
 ifeq ($(DEVICE), CUNO2)

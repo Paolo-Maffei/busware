@@ -18,6 +18,7 @@
 #define CC1100_GDO0_DDR         DDRB
 #define CC1100_GDO0_PORT        PORTB
 #define CC1100_GDO0_PIN         1
+#define CC1100_GDO0_IN          PINB 
 #define CC1100_GDO2_DDR         DDRD
 #define CC1100_GDO2_PORT        PORTD
 #define CC1100_GDO2_IN          PIND
@@ -87,6 +88,10 @@
 #define LED_PIN			4
 
 #endif
+
+#define ALWAYSLED_PORT          PORTA
+#define ALWAYSLED_DDR           DDRA
+#define ALWAYSLED_PIN           0
 
 #endif
 

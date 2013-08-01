@@ -390,6 +390,12 @@ int main(void)
 	LED_DDR  |= _BV(LED_PIN);
 #endif
 
+#ifdef ALWAYSLED_PORT
+	// LED
+	ALWAYSLED_DDR  |= _BV(ALWAYSLED_PIN);
+	ALWAYSLED_PORT |= _BV(ALWAYSLED_PIN);
+#endif
+
 #ifdef DISABLE_WDT_AT_STARTUP
 #ifdef WDT_OFF_SPECIAL
 #warning "using target specific watchdog_off"

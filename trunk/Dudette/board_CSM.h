@@ -67,5 +67,9 @@
 #define LED_DDR			DDRA
 #define LED_PIN			1
 
+#define ALWAYSLED_PORT		PORTA
+#define ALWAYSLED_DDR		DDRA
+#define ALWAYSLED_PIN		0
+
 #endif
 
