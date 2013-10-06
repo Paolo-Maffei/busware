@@ -15,6 +15,7 @@
 
 #define CC1100_GDO0_DDR         DDRD
 #define CC1100_GDO0_PORT        PORTD
+#define CC1100_GDO0_IN          PIND
 #define CC1100_GDO0_PIN         3
 #define CC1100_GDO2_DDR         DDRD
 #define CC1100_GDO2_PORT        PORTD
@@ -29,7 +30,7 @@
 
 #define BOOT_RADIO          	
 #define RADIO_CHANNEL           0x2904
-//#define RADIO_ALWAYS
+#define RADIO_ALWAYS
 
 /* where is the conditional switch located? */
 #define BOOT_PORT          	PORTA
