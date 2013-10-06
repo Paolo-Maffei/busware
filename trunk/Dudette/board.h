@@ -62,6 +62,13 @@
 #include "board_HM_LC-Sw1-PI.h"
 #endif
 
+// HomeMatic Funk-Unterputz-Schaltaktor 1fach
+// Artikel-Nr.: 68-767-93
+// keep button pressed during plugging in the device
+#ifdef HM_LC_Sw1_FM
+#include "board_HM_LC-Sw1-FM.h"
+#endif
+
 // Homematic Funk-Statusanzeige LED16
 // Artikel-Nr.: 68-10 47 98 
 // keep middle key (send/reset) pressed during powering up device

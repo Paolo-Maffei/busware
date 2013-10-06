@@ -37,8 +37,9 @@
 #DEVICE=CSM_1284P
 #DEVICE=CSM_644P
 #DEVICE=ZCSM_324P
-DEVICE=ZCSM_1284P
+#DEVICE=ZCSM_1284P
 #DEVICE=RWE_PSS
+DEVICE=HM_LC_Sw1_FM
 #DEVICE=HM_LC_Sw1_PI
 #DEVICE=HM_LC_Sw4_DR
 #DEVICE=HM_OU_LED16
@@ -46,8 +47,8 @@ DEVICE=ZCSM_1284P
 #DEVICE=CUNO2
 #DEVICE=CSB
 #DEVICE=COC
-#DEVICE=ARDCSM
 #DEVICE=CCD
+#DEVICE=ARDCSM
 
 # end of user defined values
 
@@ -55,7 +56,7 @@ ifeq ($(DEVICE), CSM_1284P)
 MCU=atmega1284p
 F_CPU=8000000
 BOOTSIZE=4096
-FUSES=-U lfuse:w:0xd6:m -U hfuse:w:0xd8:m -U lock:w:0x2f:m -U flash:w:../../culfw/trunk/culfw/Devices/CSM/CSM.hex
+FUSES=-U lfuse:w:0xd6:m -U hfuse:w:0xd8:m -U lock:w:0x2f:m -U flash:w:../../culfw-code/culfw/Devices/CSM/CSM.hex
 RADIO_CRYPT=1
 DEVICE=CSM
 endif
@@ -146,6 +147,13 @@ FUSES=-U lfuse:w:0xe2:m -U hfuse:w:0xd8:m -U lock:w:0x2f:m
 endif
 
 ifeq ($(DEVICE), HM_LC_Sw1_PI)
+MCU=atmega32
+F_CPU=8000000
+BOOTSIZE=2048
+FUSES=-U lfuse:w:0xde:m -U hfuse:w:0xd0:m -U lock:w:0x2f:m
+endif
+
+ifeq ($(DEVICE), HM_LC_Sw1_FM)
 MCU=atmega32
 F_CPU=8000000
 BOOTSIZE=2048
@@ -711,6 +719,7 @@ program: $(TARGET).hex $(TARGET).eep
 	echo -e "write eeprom $(EE_PUBL_KEY) $(wordlist 1,16,$(RSAPAIR))\nquit" | $(AVRDUDE) $(AVRDUDE_FLAGS) -t
 	echo -e "write eeprom $(EE_PRIV_KEY) $(wordlist 17,32,$(RSAPAIR))\nquit" | $(AVRDUDE) $(AVRDUDE_FLAGS) -t
 	echo -e "dump eeprom $(EE_PUBL_KEY) 38\nquit" | $(AVRDUDE) $(AVRDUDE_FLAGS) -t
+	echo -en "\007" 
 
 
 # Convert ELF to COFF for use in debugging / simulating in AVR Studio or VMLAB.
