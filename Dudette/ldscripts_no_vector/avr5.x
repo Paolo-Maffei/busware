@@ -113,6 +113,8 @@ SECTIONS
   {
      PROVIDE (__data_start = .) ;
     *(.data)
+    *(.rodata)  /* We need to include .rodata here if gcc is used */
+    *(.rodata*) /* with -fdata-sections.  */
     *(.gnu.linkonce.d*)
     . = ALIGN(2);
      _edata = . ;

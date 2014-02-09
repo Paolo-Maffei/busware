@@ -567,3 +567,16 @@ void EVENT_USB_Device_ControlRequest(void)
 #endif
 }
 
+
+void EVENT_CDC_Device_ControLineStateChanged(USB_ClassInfo_CDC_Device_t* const CDCInterfaceInfo) {
+	if (CDCInterfaceInfo->Config.ControlInterfaceNumber) 
+		return;
+
+        PRINTF( "ControlLines: %02X\r\n", CDCInterfaceInfo->State.ControlLineStates.HostToDevice );
+
+	// pretend we are always "online"
+	CDCInterfaceInfo->State.ControlLineStates.DeviceToHost |= CDC_CONTROL_LINE_IN_DCD;
+	CDCInterfaceInfo->State.ControlLineStates.DeviceToHost |= CDC_CONTROL_LINE_IN_DSR;
+	CDC_Device_SendControlLineStateChange(CDCInterfaceInfo);
+}
+

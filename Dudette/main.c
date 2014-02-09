@@ -561,6 +561,45 @@ int main(void)
 			blink();
 	}
 
+// if we have stackable modules support we need to find the module actually bootloading
+// the others just forward packets
+#ifdef BOOT_CHAIN_PORT
+
+	BOOT_CHAIN_DDR  &= ~_BV(BOOT_CHAIN_PIN);		// set as Input
+#ifdef BOOT_CHAIN_LOWACTIVE
+	BOOT_CHAIN_PORT |= _BV(BOOT_CHAIN_PIN);		// pull
+	_delay_ms(100);				// allow possible external C to charge
+#endif
+
+#ifdef BOOT_CHAIN_LOWACTIVE
+	if (bit_is_set(BOOT_CHAIN_IN, BOOT_CHAIN_PIN)) {
+#else
+	if (!bit_is_set(BOOT_CHAIN_IN, BOOT_CHAIN_PIN)) {
+#endif
+
+          // we end here if bootloading was requested but CHAIN_BUTTON is NOT pressed
+          // ... so we we are just forwarding packets
+
+
+	  UBRR1  = UBRR0;
+	  UCSR1A = UCSR0A;
+	  UCSR1B = UCSR0B;
+	  UCSR1C = UCSR0C;
+
+	  while (1) {
+	
+            while (!(UART_STATUS & (1<<UART_TXREADY)));
+              UART_DATA = data;
+	    }
+
+            while (!(UART_STATUS & (1<<UART_RXREADY)))
+              return UART_DATA;
+            }
+
+        }
+
+#endif
+
 	for(;;) {
 
 #ifdef LED_PORT
