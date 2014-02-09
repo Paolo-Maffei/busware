@@ -22,6 +22,7 @@ SRC          = $(TARGET).c Descriptors.c $(LUFA_SRC_USB) $(LUFA_SRC_USBCLASS)
 SRC         += ../../lib/seriallink/seriallink.c ../../lib/seriallink/ringbuf.c
 SRC         += ../../lib/crypto-lib/aes/aes_dec.c ../../lib/crypto-lib/aes/aes_keyschedule.c ../../lib/crypto-lib/aes/aes_enc.c ../../lib/crypto-lib/aes/aes_sbox.c ../../lib/crypto-lib/aes/aes_invsbox.c ../../lib/crypto-lib/gf256mul/gf256mul.S
 SRC	    += ../../lib/crypto-lib/aes/aes128_enc.c ../../lib/crypto-lib/aes/aes128_dec.c
+SRC	    += ../../lib/knx/KnxTelegram.cpp
 
 
 LUFA_PATH    = ../../lufa-lib-read-only/LUFA

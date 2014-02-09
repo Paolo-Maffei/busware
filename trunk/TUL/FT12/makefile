@@ -21,7 +21,7 @@ TARGET       = FT12
 SRC          = $(TARGET).c Descriptors.c $(LUFA_SRC_USB) $(LUFA_SRC_USBCLASS)
 LUFA_PATH    = ../../lufa-lib-read-only/LUFA/
 CC_FLAGS     = -DUSE_LUFA_CONFIG_HEADER -IConfig/
-#CC_FLAGS    += -DDEBUG
+CC_FLAGS    += -DDEBUG
 LD_FLAGS     =
 
 # Default target

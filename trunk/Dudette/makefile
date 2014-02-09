@@ -39,12 +39,12 @@
 #DEVICE=ZCSM_324P
 #DEVICE=ZCSM_1284P
 #DEVICE=RWE_PSS
-DEVICE=HM_LC_Sw1_FM
+#DEVICE=HM_LC_Sw1_FM
 #DEVICE=HM_LC_Sw1_PI
 #DEVICE=HM_LC_Sw4_DR
 #DEVICE=HM_OU_LED16
 #DEVICE=PWMBOX
-#DEVICE=CUNO2
+DEVICE=CUNO2
 #DEVICE=CSB
 #DEVICE=COC
 #DEVICE=CCD
@@ -82,7 +82,7 @@ ifeq ($(DEVICE), ARDCSM)
 MCU=atmega1284p
 F_CPU=8000000
 BOOTSIZE=4096
-FUSES=-U flash:w:/root/workdir/culfw/Devices/zCSM/CSM.hex -U lfuse:w:0xd6:m -U hfuse:w:0xd8:m -U lock:w:0x2f:m
+FUSES=-U flash:w:../../culfw-code/culfw/Devices/CSM/CSM.hex -U lfuse:w:0xd6:m -U hfuse:w:0xd8:m -U lock:w:0x2f:m
 RADIO_CRYPT=1
 endif
 
