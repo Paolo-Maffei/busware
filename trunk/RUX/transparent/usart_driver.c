@@ -271,11 +271,16 @@ void USART_DataRegEmpty(USART_data_t * usart_data)
 		usart_data->usart->CTRLA = tempCTRLA;
  
 	        // Receiving
+		USART_Tx_Disable(usart_data->usart);
        	 	PORTC.OUTCLR = PIN1_bm;
+        	USART_Rx_Enable(usart_data->usart);
+
 
 	}else{
 	        // Sending
+		USART_Rx_Disable(usart_data->usart);
        	 	PORTC.OUTSET = PIN1_bm;
+        	USART_Tx_Enable(usart_data->usart);
 
 		/* Start transmitting. */
 		uint8_t data = bufPtr->TX[usart_data->buffer.TX_Tail];

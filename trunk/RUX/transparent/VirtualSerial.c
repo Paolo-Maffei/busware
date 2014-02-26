@@ -37,10 +37,10 @@
 #include "VirtualSerial.h"
 #include <stddef.h>
 #include <avr/pgmspace.h> 
+#include <util/delay.h> 
 #include "usart_driver.h"
 
 #define USART USARTC0
-USART_data_t USART_data;
 
 /** LUFA CDC Class driver interface configuration and state information. This structure is
  *  passed to all CDC Class driver functions, so that multiple instances of the same class
@@ -72,17 +72,8 @@ USB_ClassInfo_CDC_Device_t VirtualSerial_CDC_Interface =
 			},
 	};
 
-/** Standard file stream for the CDC interface when set up, so that the virtual CDC COM port can be
- *  used like any regular character stream in the C APIs
- */
-static FILE USBSerialStream;
-
-int usb_putchar (char data, FILE * stream) {
-        fputc(data, &USBSerialStream);
-        return 0;
-}
-
 uint16_t loop;
+uint8_t configured = 0;
 
 /** Main program entry point. This routine contains the overall program flow, including initial
  *  setup of all components and the main program loop.
@@ -91,63 +82,47 @@ int main(void)
 {
 	SetupHardware();
 
-	/* Create a regular character stream for the interface so that it can be used with the stdio.h functions */
-	CDC_Device_CreateStream(&VirtualSerial_CDC_Interface, &USBSerialStream);
-
-#ifdef BOARD_HAS_LEDS
-	LEDs_SetAllLEDs(LEDMASK_USB_NOTREADY);
-#endif
 	GlobalInterruptEnable();
 
-	for (;;)
-	{
+	uint8_t sending = 0;
 
-		/* Must throw away unused bytes from the host, or it will lock up while waiting for the device */
-                int16_t ReceivedByte = CDC_Device_ReceiveByte(&VirtualSerial_CDC_Interface);
-		if (!(ReceivedByte < 0)) {
-			//printf( "%02x ", ReceivedByte & 0xff);
-			switch (ReceivedByte & 0xff) {
-				case '1':
-// 01 21 20 29 3F AA
-// 01 21 10 29 3F 9A
-// 01 21 11 29 3F 9B 9B
-// "\x01\x2F\x20\x29\x01\x7A\x01\x2F\x10\x29\x01\x6A\x01\x2F\x11\x29\x01\x6B\x6B"
-					USART_TXBuffer_PutByte(&USART_data, 0x01);
-					USART_TXBuffer_PutByte(&USART_data, 0x2f);
-					USART_TXBuffer_PutByte(&USART_data, 0x20);
-					USART_TXBuffer_PutByte(&USART_data, 0x29);
-					USART_TXBuffer_PutByte(&USART_data, 0x01);
-					USART_TXBuffer_PutByte(&USART_data, 0x7a);
+	for (;;) {
 
-					USART_TXBuffer_PutByte(&USART_data, 0x01);
-					USART_TXBuffer_PutByte(&USART_data, 0x2f);
-					USART_TXBuffer_PutByte(&USART_data, 0x10);
-					USART_TXBuffer_PutByte(&USART_data, 0x29);
-					USART_TXBuffer_PutByte(&USART_data, 0x01);
-					USART_TXBuffer_PutByte(&USART_data, 0x6a);
+		while (1) {
+                	int16_t ReceivedByte = CDC_Device_ReceiveByte(&VirtualSerial_CDC_Interface);
+			if (ReceivedByte < 0) 
+				break;
 
-					USART_TXBuffer_PutByte(&USART_data, 0x01);
-					USART_TXBuffer_PutByte(&USART_data, 0x2f);
-					USART_TXBuffer_PutByte(&USART_data, 0x11);
-					USART_TXBuffer_PutByte(&USART_data, 0x29);
-					USART_TXBuffer_PutByte(&USART_data, 0x01);
-					USART_TXBuffer_PutByte(&USART_data, 0x6b);
-				//	USART_TXBuffer_PutByte(&USART_data, 0x6b);
+			if (!configured) continue;
 
-					break;
+			if (!sending) {
+				PORTC.OUTSET = PIN1_bm;
+				sending = 1;
 			}
+
+			PORTD.OUTTGL = PIN5_bm;
+                	while(!USART_IsTXDataRegisterEmpty(&USART));
+                	USART_PutChar(&USART, ReceivedByte & 0xff);
 		}
 
-                while (USART_RXBufferData_Available(&USART_data)) {
+		if (sending) {
+			USART_ClearTXComplete(&USART);
+               		while(!USART_IsTXComplete(&USART));
+			PORTC.OUTCLR = PIN1_bm;
+			sending = 0;	
+		}
+
+		while(configured && USART_IsRXComplete(&USART)) {
+                	uint8_t b = USART_GetChar(&USART);
+			CDC_Device_SendByte(&VirtualSerial_CDC_Interface, b);
 			PORTD.OUTTGL = PIN5_bm;
-			uint8_t b = USART_RXBuffer_GetByte(&USART_data);
-			printf( "%02X ", b);
-                }
+		}
 
 		CDC_Device_USBTask(&VirtualSerial_CDC_Interface);
 		USB_USBTask();
 
 		if (loop++) continue;
+		if (!configured) continue;
 
 		PORTD.OUTTGL = PIN5_bm;
 	}
@@ -156,14 +131,6 @@ int main(void)
 /** Configures the board hardware and chip peripherals for the demo's functionality. */
 void SetupHardware(void)
 {
-#if (ARCH == ARCH_AVR8)
-	/* Disable watchdog if enabled by bootloader/fuses */
-	MCUSR &= ~(1 << WDRF);
-	wdt_disable();
-
-	/* Disable clock division */
-	clock_prescale_set(clock_div_1);
-#elif (ARCH == ARCH_XMEGA)
 	/* Start the PLL to multiply the 2MHz RC oscillator to 32MHz and switch the CPU core to run from it */
 	XMEGACLK_StartPLL(CLOCK_SRC_INT_RC2MHZ, 2000000, F_CPU);
 	XMEGACLK_SetCPUClockSource(CLOCK_SRC_PLL);
@@ -186,41 +153,13 @@ void SetupHardware(void)
 	// Receiving
 	PORTC.OUTCLR = PIN1_bm;
 
-#endif
-
 	/* Hardware Initialization */
-#ifdef BOARD_HAS_LEDS
-	LEDs_Init();
-#endif
 
 	// USART RX/TX 1
 	/* PIN3 (TXD0) as output. */
         PORTC.DIRSET = PIN3_bm;
         /* PC2 (RXD0) as input. */
         PORTC.DIRCLR = PIN2_bm;
-
-        /* Use USARTF0 and initialize buffers. */
-        USART_InterruptDriver_Initialize(&USART_data, &USART, USART_DREINTLVL_LO_gc);
-
-        /* USARTC0, 8 Data bits, No Parity, 1 Stop bit. */
-        USART_Format_Set(USART_data.usart, USART_CHSIZE_8BIT_gc, USART_PMODE_DISABLED_gc, false);
-
-        /* Enable RXC interrupt. */
-        USART_RxdInterruptLevel_Set(USART_data.usart, USART_RXCINTLVL_LO_gc);
-
-        /* Set Baudrate to 38400 bps:
-         * Use the default I/O clock frequency that is 32 MHz.
-         * Do not use the baudrate scale factor
-         *
-         * Baudrate select = (1/(16*(((I/O clock frequency)/Baudrate)-1)
-         *                 = 12
-         */
-        USART_Baudrate_Set(&USART, 12 , 4); // 9600 
-//        USART_Baudrate_Set(&USART, 24 , 0); // 19200
-
-        /* Enable both RX and TX. */
-        USART_Rx_Enable(USART_data.usart);
-        USART_Tx_Enable(USART_data.usart);
 
         /* Enable global interrupts. */
         sei();
@@ -231,17 +170,11 @@ void SetupHardware(void)
 /** Event handler for the library USB Connection event. */
 void EVENT_USB_Device_Connect(void)
 {
-#ifdef BOARD_HAS_LEDS
-	LEDs_SetAllLEDs(LEDMASK_USB_ENUMERATING);
-#endif
 }
 
 /** Event handler for the library USB Disconnection event. */
 void EVENT_USB_Device_Disconnect(void)
 {
-#ifdef BOARD_HAS_LEDS
-	LEDs_SetAllLEDs(LEDMASK_USB_NOTREADY);
-#endif
 }
 
 /** Event handler for the library USB Configuration Changed event. */
@@ -251,11 +184,6 @@ void EVENT_USB_Device_ConfigurationChanged(void)
 
 	ConfigSuccess &= CDC_Device_ConfigureEndpoints(&VirtualSerial_CDC_Interface);
 
-#ifdef BOARD_HAS_LEDS
-        LEDs_SetAllLEDs(ConfigSuccess ? LEDMASK_USB_READY : LEDMASK_USB_ERROR);
-#endif
-        fdevopen(&usb_putchar,NULL);
-
 }
 
 /** Event handler for the library USB Control Request reception event. */
@@ -264,26 +192,109 @@ void EVENT_USB_Device_ControlRequest(void)
 	CDC_Device_ProcessControlRequest(&VirtualSerial_CDC_Interface);
 }
 
-/*! \brief Receive complete interrupt service routine.
+/** Event handler for the CDC Class driver Line Encoding Changed event.
  *
- *  Receive complete interrupt service routine.
- *  Calls the common receive complete handler with pointer to the correct USART
- *  as argument.
+ *  \param[in] CDCInterfaceInfo  Pointer to the CDC class interface configuration structure being referenced
  */
-ISR(USARTC0_RXC_vect)
+void EVENT_CDC_Device_LineEncodingChanged(USB_ClassInfo_CDC_Device_t* const CDCInterfaceInfo)
 {
-        USART_RXComplete(&USART_data);
-}
+        uint8_t pmode = 0;
+        uint8_t csize = 0;
+        uint8_t twosb = 0;
+        int8_t bscale = 4;
+        uint8_t bsel  = 12;
 
+        switch (CDCInterfaceInfo->State.LineEncoding.ParityType)
+        {
+                case CDC_PARITY_Odd:
+                        pmode = USART_PMODE_ODD_gc; 
+                        break;
+                case CDC_PARITY_Even:
+                        pmode = USART_PMODE_EVEN_gc; 
+                        break;
+		default:
+                        pmode = USART_PMODE_DISABLED_gc; 
 
-/*! \brief Data register empty  interrupt service routine.
- *
- *  Data register empty  interrupt service routine.
- *  Calls the common data register empty complete handler with pointer to the
- *  correct USART as argument.
- */
-ISR(USARTC0_DRE_vect)
-{
-        USART_DataRegEmpty(&USART_data);
+        }
+
+        if (CDCInterfaceInfo->State.LineEncoding.CharFormat == CDC_LINEENCODING_TwoStopBits)
+          twosb = 1;
+
+        switch (CDCInterfaceInfo->State.LineEncoding.DataBits)
+        {
+                case 6:
+                        csize = USART_CHSIZE_6BIT_gc; 
+                        break;
+                case 7:
+                        csize = USART_CHSIZE_7BIT_gc; 
+                        break;
+                case 8:
+                        csize = USART_CHSIZE_8BIT_gc; 
+                        break;
+		default:
+			return;
+        }
+
+        switch (CDCInterfaceInfo->State.LineEncoding.BaudRateBPS)
+        {
+                case 2400:
+                        bsel   = 12;
+                        bscale = 6;
+                        break;
+                case 4800:
+                        bsel   = 12;
+                        bscale = 5;
+                        break;
+                case 9600:
+                        bsel   = 12;
+                        bscale = 4;
+                        break;
+                case 14400:
+                        bsel   = 138;
+                        bscale = 0;
+                        break;
+                case 19200:
+                        bsel   = 12;
+                        bscale = 3;
+                        break;
+                case 28800:
+                        bsel   = 137;
+                        bscale = -1;
+                        break;
+                case 38400:
+                        bsel   = 12;
+                        bscale = 2;
+                        break;
+                case 57600:
+                        bsel   = 135;
+                        bscale = -2;
+                        break;
+                case 76800:
+                        bsel   = 12;
+                        bscale = 1;
+                        break;
+                case 115200:
+                        bsel   = 131;
+                        bscale = -3;
+                        break;
+                case 230400:
+                        bsel   = 123;
+                        bscale = -4;
+                        break;
+                case 460800:
+                        bsel   = 107;
+                        bscale = -5;
+                        break;
+		default:
+			return;
+	}
+
+        USART_Format_Set(&USART, csize, pmode, twosb);
+        USART_Baudrate_Set(&USART, bsel, bscale);
+
+        USART_Rx_Enable(&USART);
+        USART_Tx_Enable(&USART);
+
+	configured = 1;
 }
 
