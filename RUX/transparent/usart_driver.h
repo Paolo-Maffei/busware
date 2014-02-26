@@ -66,9 +66,9 @@
 /* USART buffer defines. */
 
 /* \brief  Receive buffer size: 2,4,8,16,32,64,128 or 256 bytes. */
-#define USART_RX_BUFFER_SIZE 32 
+#define USART_RX_BUFFER_SIZE 256 
 /* \brief Transmit buffer size: 2,4,8,16,32,64,128 or 256 bytes */
-#define USART_TX_BUFFER_SIZE 32 
+#define USART_TX_BUFFER_SIZE 256 
 /* \brief Receive buffer mask. */
 #define USART_RX_BUFFER_MASK ( USART_RX_BUFFER_SIZE - 1 )
 /* \brief Transmit buffer mask. */
@@ -248,6 +248,8 @@ typedef struct Usart_and_buffer
  *  \param _usart      The USART module.
  */
 #define USART_IsTXDataRegisterEmpty(_usart) (((_usart)->STATUS & USART_DREIF_bm) != 0)
+#define USART_IsTXComplete(_usart) (((_usart)->STATUS & USART_TXCIF_bm) != 0)
+#define USART_ClearTXComplete(_usart) ((_usart)->STATUS |= USART_TXCIF_bm)
 
 
 

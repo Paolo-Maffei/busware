@@ -20,7 +20,7 @@ OPTIMIZATION = s
 TARGET       = VirtualSerial
 SRC          = $(TARGET).c Descriptors.c $(LUFA_SRC_USB) $(LUFA_SRC_USBCLASS)
 SRC         += eeprom_driver.c usart_driver.c twi-master.c
-LUFA_PATH    = ../../../lufa-lib-xmega/LUFA
+LUFA_PATH    = ../../lufa-lib-xmega/LUFA
 CC_FLAGS     = -DUSE_LUFA_CONFIG_HEADER -IConfig/
 LD_FLAGS     = -Wl,-u,vfprintf -lprintf_flt -lm 
 
