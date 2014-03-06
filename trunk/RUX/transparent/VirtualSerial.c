@@ -41,6 +41,8 @@
 #include "usart_driver.h"
 
 #define USART USARTC0
+USART_data_t USART_data;
+
 
 /** LUFA CDC Class driver interface configuration and state information. This structure is
  *  passed to all CDC Class driver functions, so that multiple instances of the same class
@@ -112,11 +114,12 @@ int main(void)
 			sending = 0;	
 		}
 
-		while(configured && USART_IsRXComplete(&USART)) {
-                	uint8_t b = USART_GetChar(&USART);
+                while (configured && USART_RXBufferData_Available(&USART_data)) {
+                        uint8_t b = USART_RXBuffer_GetByte(&USART_data);
 			CDC_Device_SendByte(&VirtualSerial_CDC_Interface, b);
 			PORTD.OUTTGL = PIN5_bm;
-		}
+                }
+
 
 		CDC_Device_USBTask(&VirtualSerial_CDC_Interface);
 		USB_USBTask();
@@ -160,6 +163,9 @@ void SetupHardware(void)
         PORTC.DIRSET = PIN3_bm;
         /* PC2 (RXD0) as input. */
         PORTC.DIRCLR = PIN2_bm;
+
+        USART_InterruptDriver_Initialize(&USART_data, &USART, USART_DREINTLVL_OFF_gc);
+        USART_RxdInterruptLevel_Set(USART_data.usart, USART_RXCINTLVL_LO_gc);
 
         /* Enable global interrupts. */
         sei();
@@ -296,5 +302,9 @@ void EVENT_CDC_Device_LineEncodingChanged(USB_ClassInfo_CDC_Device_t* const CDCI
         USART_Tx_Enable(&USART);
 
 	configured = 1;
+}
+
+ISR(USARTC0_RXC_vect) {
+        USART_RXComplete(&USART_data);
 }
 
