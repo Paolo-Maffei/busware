@@ -114,12 +114,19 @@ int main(void)
 			sending = 0;	
 		}
 
-                while (configured && USART_RXBufferData_Available(&USART_data)) {
-                        uint8_t b = USART_RXBuffer_GetByte(&USART_data);
-			CDC_Device_SendByte(&VirtualSerial_CDC_Interface, b);
-			PORTD.OUTTGL = PIN5_bm;
-                }
+                Endpoint_SelectEndpoint(VirtualSerial_CDC_Interface.Config.DataINEndpoint.Address);
 
+                /* Check if a packet is already enqueued to the host - if so, we shouldn't try to send more data
+                 * until it completes as there is a chance nothing is listening and a lengthy timeout could occur */
+
+		if (configured && Endpoint_IsINReady()) {
+			uint8_t maxbytes = CDC_TXRX_EPSIZE;
+                	while (USART_RXBufferData_Available(&USART_data) && maxbytes-->0) {
+                        	uint8_t b = USART_RXBuffer_GetByte(&USART_data);
+				CDC_Device_SendByte(&VirtualSerial_CDC_Interface, b);
+				PORTD.OUTTGL = PIN5_bm;
+                	}
+                }
 
 		CDC_Device_USBTask(&VirtualSerial_CDC_Interface);
 		USB_USBTask();
