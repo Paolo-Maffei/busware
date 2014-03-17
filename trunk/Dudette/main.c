@@ -414,6 +414,13 @@ int main(void)
 #ifdef BOOT_SERIAL
 /********************************/
 
+#ifdef UART_STACKED
+	SWITCH_DDR  &= ~_BV(SWITCH_PIN);	// set as Input
+#ifdef SWITCH_LOWACTIVE
+	SWITCH_PORT |= _BV(SWITCH_PIN);		// pull
+	_delay_ms(100);				// allow possible external C to charge
+#endif
+#endif
 	BOOT_DDR  &= ~_BV(BOOT_PIN);		// set as Input
 #ifdef BOOT_LOWACTIVE
 	BOOT_PORT |= _BV(BOOT_PIN);		// pull
@@ -436,6 +443,46 @@ int main(void)
 		UART_CTRL = UART_CTRL_DATA;
 		UART_CTRL2 = UART_CTRL2_DATA;
 
+// is it really us bootloading - if stacked?
+#ifdef UART_STACKED
+#ifdef SWITCH_LOWACTIVE
+	if (bit_is_set(SWITCH_IN, SWITCH_PIN)) {
+#else
+	if (!bit_is_set(SWITCH_IN, SWITCH_PIN)) {
+#endif
+		// no! we just forwarding packets ...
+
+		// assign same format to UART1
+		UART1_BAUD_HIGH = UART_BAUD_HIGH;
+		UART1_BAUD_LOW  = UART_BAUD_LOW;
+		UART1_STATUS    = UART_STATUS;
+                UART1_CTRL      = UART_CTRL;
+                UART1_CTRL2     = UART_CTRL2;
+
+		uint8_t buf1[256], buf2[256], pos1, pos2;
+
+		pos1 = 0;
+		pos2 = 0;
+
+		while(1) {
+
+			// received a byte from RPi
+          		if ((UART_STATUS & (1<<UART_RXREADY))) {
+			  	buf1[pos1++] = UART_DATA;
+			}
+	  		if(pos1 && (UART1_STATUS & (1<<UART1_TXREADY)))
+	  		  	UART1_DATA = buf1[--pos1];
+
+			// received a byte from module above
+          		if ((UART1_STATUS & (1<<UART1_RXREADY))) {
+			  	buf2[pos2++] = UART1_DATA;
+			}
+	  		if(pos2 && (UART_STATUS & (1<<UART_TXREADY)))
+	  		  	UART_DATA = buf2[--pos2];
+
+		}
+	}
+#endif
   		sendchar = serial_sendchar;
   		recvchar = serial_recvchar;
 	

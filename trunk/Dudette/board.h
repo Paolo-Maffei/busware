@@ -43,6 +43,13 @@
 #include "board_COC.h"
 #endif
 
+// busware - Stackable CC1101 device for RPi
+// pull GPIO18 low during startup or reset by GPIO17
+// in addition: press the microbutton on desired extension
+#ifdef SCC
+#include "board_SCC.h"
+#endif
+
 // busware - CC1101-Clock-Display device for RPi
 // pull GPIO22 low during startup or reset by GPIO17
 #ifdef CCD
